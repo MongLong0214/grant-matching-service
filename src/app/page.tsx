@@ -13,23 +13,23 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative flex min-h-[80vh] flex-col items-center justify-center px-4 text-center">
         {/* Background gradient */}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-blue-50 via-white to-white" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-primary/5 via-background to-background" />
 
         <div className="mx-auto max-w-2xl space-y-6">
           {/* Badge */}
-          <div className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-sm font-medium text-blue-700">
+          <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary">
             30초면 끝 · 가입 없음
           </div>
 
           {/* Headline */}
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl md:text-5xl">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
             받을 수 있는 지원금,
             <br />
-            <span className="text-blue-600">몇 개나 놓치고</span> 계세요?
+            <span className="text-primary">몇 개나 놓치고</span> 계세요?
           </h1>
 
           {/* Sub-text */}
-          <p className="mx-auto max-w-lg text-base text-slate-600 sm:text-lg">
+          <p className="mx-auto max-w-lg text-base text-muted-foreground sm:text-lg">
             사업 정보 5개만 입력하면
             <br className="sm:hidden" />
             {' '}받을 수 있는 정부지원금을 바로 찾아드려요.
@@ -37,30 +37,30 @@ export default function HomePage() {
 
           {/* CTA Button */}
           <div className="pt-4">
-            <Link href="/diagnose">
-              <Button size="lg" className="h-14 px-8 text-base font-semibold shadow-lg shadow-blue-500/25 sm:text-lg">
+            <Button asChild size="lg" className="h-14 px-8 text-base font-semibold shadow-lg shadow-primary/25 sm:text-lg">
+              <Link href="/diagnose">
                 무료 진단 시작
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
 
       {/* Stats Section */}
-      <section className="border-t border-slate-100 bg-slate-50 py-16">
+      <section className="border-t border-border bg-muted/50 py-16">
         <div className="mx-auto max-w-4xl px-4">
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
             <div className="text-center">
-              <p className="text-3xl font-bold text-blue-600">평균 7개</p>
-              <p className="mt-1 text-sm text-slate-600">지원금 발견</p>
+              <p className="text-3xl font-bold text-primary">95,000+</p>
+              <p className="mt-1 text-sm text-muted-foreground">정부 지원사업 DB</p>
             </div>
             <div className="text-center">
-              <p className="text-3xl font-bold text-blue-600">2,300만원</p>
-              <p className="mt-1 text-sm text-slate-600">평균 지원 기회</p>
+              <p className="text-3xl font-bold text-primary">30초</p>
+              <p className="mt-1 text-sm text-muted-foreground">진단 소요시간</p>
             </div>
             <div className="text-center">
-              <p className="text-3xl font-bold text-blue-600">10,000+</p>
-              <p className="mt-1 text-sm text-slate-600">사장님 이용</p>
+              <p className="text-3xl font-bold text-primary">5가지</p>
+              <p className="mt-1 text-sm text-muted-foreground">맞춤 조건 분석</p>
             </div>
           </div>
         </div>
@@ -69,34 +69,34 @@ export default function HomePage() {
       {/* How it works */}
       <section className="py-16">
         <div className="mx-auto max-w-4xl px-4">
-          <h2 className="text-center text-2xl font-bold text-slate-900">
+          <h2 className="text-center text-2xl font-bold text-foreground">
             이렇게 간단해요
           </h2>
           <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-3">
             <div className="text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-xl font-bold text-blue-600">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-xl font-bold text-primary">
                 1
               </div>
-              <h3 className="mt-4 font-semibold text-slate-900">사업 정보 입력</h3>
-              <p className="mt-2 text-sm text-slate-600">
+              <h3 className="mt-4 font-semibold text-foreground">사업 정보 입력</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
                 업종, 지역, 직원 수 등<br />5개 정보만 선택하세요
               </p>
             </div>
             <div className="text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-xl font-bold text-blue-600">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-xl font-bold text-primary">
                 2
               </div>
-              <h3 className="mt-4 font-semibold text-slate-900">자동 매칭</h3>
-              <p className="mt-2 text-sm text-slate-600">
+              <h3 className="mt-4 font-semibold text-foreground">자동 매칭</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
                 조건에 맞는 지원금을<br />자동으로 찾아드려요
               </p>
             </div>
             <div className="text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-xl font-bold text-blue-600">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-xl font-bold text-primary">
                 3
               </div>
-              <h3 className="mt-4 font-semibold text-slate-900">바로 신청</h3>
-              <p className="mt-2 text-sm text-slate-600">
+              <h3 className="mt-4 font-semibold text-foreground">바로 신청</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
                 매칭된 지원금의<br />신청 페이지로 바로 이동
               </p>
             </div>
@@ -105,15 +105,15 @@ export default function HomePage() {
       </section>
 
       {/* Footer CTA */}
-      <section className="border-t border-slate-100 bg-slate-50 py-12">
+      <section className="border-t border-border bg-muted/50 py-12">
         <div className="mx-auto max-w-2xl px-4 text-center">
-          <p className="text-lg font-medium text-slate-700">
+          <p className="text-lg font-medium text-foreground">
             놓치고 있는 지원금, 지금 바로 확인하세요
           </p>
           <div className="mt-4">
-            <Link href="/diagnose">
-              <Button size="lg">무료 진단 시작</Button>
-            </Link>
+            <Button asChild size="lg">
+              <Link href="/diagnose">무료 진단 시작</Link>
+            </Button>
           </div>
         </div>
       </section>

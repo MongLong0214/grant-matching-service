@@ -1,53 +1,45 @@
-'use client'
+"use client"
 
-import { cn } from '@/lib/utils'
+import * as React from "react"
+import * as RadioGroupPrimitive from "@radix-ui/react-radio-group"
+import { CircleIcon } from "lucide-react"
 
-interface RadioGroupProps {
-  label?: string
-  error?: string
-  name: string
-  options: readonly { label: string; value: string | number }[]
-  value?: string | number
-  onChange: (value: string) => void
-}
+import { cn } from "@/lib/utils"
 
-/**
- * 라디오 버튼 그룹 컴포넌트
- * 선택형 입력을 위한 라디오 버튼 UI
- */
-export function RadioGroup({ label, error, name, options, value, onChange }: RadioGroupProps) {
+function RadioGroup({
+  className,
+  ...props
+}: React.ComponentProps<typeof RadioGroupPrimitive.Root>) {
   return (
-    <div className="space-y-1.5">
-      {label && (
-        <span className="block text-sm font-medium text-slate-700">{label}</span>
-      )}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        {options.map((option) => {
-          const isSelected = String(value) === String(option.value)
-          return (
-            <label
-              key={String(option.value)}
-              className={cn(
-                'flex cursor-pointer items-center justify-center rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors',
-                isSelected
-                  ? 'border-blue-500 bg-blue-50 text-blue-700'
-                  : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-              )}
-            >
-              <input
-                type="radio"
-                name={name}
-                value={String(option.value)}
-                checked={isSelected}
-                onChange={(e) => onChange(e.target.value)}
-                className="sr-only"
-              />
-              {option.label}
-            </label>
-          )
-        })}
-      </div>
-      {error && <p className="text-xs text-red-500">{error}</p>}
-    </div>
+    <RadioGroupPrimitive.Root
+      data-slot="radio-group"
+      className={cn("grid gap-3", className)}
+      {...props}
+    />
   )
 }
+
+function RadioGroupItem({
+  className,
+  ...props
+}: React.ComponentProps<typeof RadioGroupPrimitive.Item>) {
+  return (
+    <RadioGroupPrimitive.Item
+      data-slot="radio-group-item"
+      className={cn(
+        "border-input text-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 aspect-square size-4 shrink-0 rounded-full border shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
+        className
+      )}
+      {...props}
+    >
+      <RadioGroupPrimitive.Indicator
+        data-slot="radio-group-indicator"
+        className="relative flex items-center justify-center"
+      >
+        <CircleIcon className="fill-primary absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2" />
+      </RadioGroupPrimitive.Indicator>
+    </RadioGroupPrimitive.Item>
+  )
+}
+
+export { RadioGroup, RadioGroupItem }

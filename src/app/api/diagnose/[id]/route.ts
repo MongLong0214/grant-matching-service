@@ -60,7 +60,7 @@ export async function GET(
       },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60',
+          'Cache-Control': 'private, no-store',
           'X-Response-Time': `${duration}ms`,
         },
       }

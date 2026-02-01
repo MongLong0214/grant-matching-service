@@ -35,7 +35,6 @@ export function useDiagnose() {
     } catch (err) {
       const message = err instanceof Error ? err.message : '오류가 발생했습니다.'
       setError(message)
-      throw err
     } finally {
       setIsLoading(false)
     }

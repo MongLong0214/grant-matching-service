@@ -170,7 +170,11 @@ export async function saveDiagnosis(input: DiagnoseFormData, matchedSupports: Su
  */
 export async function getDiagnosis(id: string) {
   if (!isSupabaseConfigured()) {
-    return devDiagnoses.get(id) || null
+    const diagnosis = devDiagnoses.get(id)
+    if (!diagnosis) return null
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { email, ...withoutEmail } = diagnosis
+    return withoutEmail
   }
 
   const { createClient } = await import('@/lib/supabase/server')
@@ -191,7 +195,6 @@ export async function getDiagnosis(id: string) {
     employeeCount: data.employee_count,
     annualRevenue: data.annual_revenue,
     businessStartDate: data.business_start_date,
-    email: data.email,
     matchedSupportIds: data.matched_support_ids || [],
     matchedCount: data.matched_count,
     createdAt: data.created_at,

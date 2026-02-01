@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { fetchAllPrograms, mapToSupport } from "@/lib/bizinfo"
+import { timingSafeEqual } from "crypto"
 
 /** 배치 삽입 단위 (Supabase 제한 고려) */
 const BATCH_SIZE = 500
@@ -34,9 +35,11 @@ export async function POST(request: Request) {
     const syncSecret = request.headers.get("x-sync-secret")
     const expectedSecret = process.env.SYNC_SECRET
 
-    if (!expectedSecret || syncSecret !== expectedSecret) {
+    if (!expectedSecret || !syncSecret ||
+        Buffer.byteLength(syncSecret) !== Buffer.byteLength(expectedSecret) ||
+        !timingSafeEqual(Buffer.from(syncSecret), Buffer.from(expectedSecret))) {
       return NextResponse.json(
-        { success: false, error: "Unauthorized" },
+        { success: false, error: "인증이 필요합니다" },
         { status: 401 }
       )
     }
@@ -110,7 +113,7 @@ export async function POST(request: Request) {
       total: programs.length,
     })
   } catch (error) {
-    console.error("[Sync] Error:", error)
+    console.error("[Sync] Error:", error instanceof Error ? error.message : "Unknown error")
     const errorMessage = error instanceof Error ? error.message : "Unknown error"
     return NextResponse.json(
       {

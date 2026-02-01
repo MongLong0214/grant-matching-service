@@ -1,3 +1,5 @@
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
 import SupportCard from '@/components/support-card'
 import type { Support } from '@/types'
 
@@ -13,13 +15,15 @@ interface SupportListProps {
 export default function SupportList({ supports }: SupportListProps) {
   if (supports.length === 0) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-8 text-center">
-        <p className="text-lg font-medium text-slate-600">
-          조건에 맞는 지원금이 없습니다.
+      <div className="rounded-xl border border-border bg-muted/50 p-10 text-center">
+        <div className="mb-4 text-5xl">🔍</div>
+        <p className="text-lg font-semibold text-foreground">조건에 맞는 지원금이 없습니다</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          입력 조건을 변경하면 더 많은 지원금을 찾을 수 있어요.
         </p>
-        <p className="mt-2 text-sm text-slate-500">
-          입력 조건을 변경하여 다시 진단해보세요.
-        </p>
+        <Button asChild className="mt-5">
+          <Link href="/diagnose">다시 진단하기</Link>
+        </Button>
       </div>
     )
   }

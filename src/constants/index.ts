@@ -52,14 +52,14 @@ export const REVENUE_OPTIONS = [
 
 export const FREE_PREVIEW_COUNT = 3
 
-/** 카테고리별 뱃지 색상 매핑 */
+/** 카테고리별 뱃지 색상 매핑 (light + dark safe) */
 export const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
-  "금융": { bg: "bg-emerald-100", text: "text-emerald-700" },
-  "기술": { bg: "bg-blue-100", text: "text-blue-700" },
-  "인력": { bg: "bg-purple-100", text: "text-purple-700" },
-  "수출": { bg: "bg-cyan-100", text: "text-cyan-700" },
-  "내수": { bg: "bg-amber-100", text: "text-amber-700" },
-  "창업": { bg: "bg-orange-100", text: "text-orange-700" },
-  "경영": { bg: "bg-slate-100", text: "text-slate-700" },
-  "기타": { bg: "bg-gray-100", text: "text-gray-700" },
+  "금융": { bg: "bg-emerald-100 dark:bg-emerald-900/40", text: "text-emerald-700 dark:text-emerald-300" },
+  "기술": { bg: "bg-blue-100 dark:bg-blue-900/40", text: "text-blue-700 dark:text-blue-300" },
+  "인력": { bg: "bg-purple-100 dark:bg-purple-900/40", text: "text-purple-700 dark:text-purple-300" },
+  "수출": { bg: "bg-cyan-100 dark:bg-cyan-900/40", text: "text-cyan-700 dark:text-cyan-300" },
+  "내수": { bg: "bg-amber-100 dark:bg-amber-900/40", text: "text-amber-700 dark:text-amber-300" },
+  "창업": { bg: "bg-orange-100 dark:bg-orange-900/40", text: "text-orange-700 dark:text-orange-300" },
+  "경영": { bg: "bg-slate-100 dark:bg-slate-800/40", text: "text-slate-700 dark:text-slate-300" },
+  "기타": { bg: "bg-gray-100 dark:bg-gray-800/40", text: "text-gray-700 dark:text-gray-300" },
 } as const
