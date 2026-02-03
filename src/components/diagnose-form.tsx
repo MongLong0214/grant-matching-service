@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Store, MapPin, Users, Banknote, Calendar, Mail, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { BUSINESS_TYPES, REGIONS, EMPLOYEE_OPTIONS, REVENUE_OPTIONS } from '@/constants'
 import type { DiagnoseFormData } from '@/types'
@@ -116,14 +116,17 @@ export default function DiagnoseForm({ onSubmit, isLoading }: DiagnoseFormProps)
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="businessType">업종</Label>
+        <Label htmlFor="businessType" className="flex items-center gap-2 text-sm font-bold">
+          <Store className="h-4 w-4" />
+          업종
+        </Label>
         <Select
           value={formData.businessType}
           onValueChange={(val) => setFormData(prev => ({ ...prev, businessType: val }))}
         >
           <SelectTrigger
             id="businessType"
-            className="w-full"
+            className="h-12 w-full rounded-xl border border-border bg-muted text-base focus:ring-primary"
             aria-invalid={!!errors.businessType}
             aria-describedby={errors.businessType ? 'businessType-error' : undefined}
             onBlur={() => validateField('businessType')}
@@ -144,14 +147,17 @@ export default function DiagnoseForm({ onSubmit, isLoading }: DiagnoseFormProps)
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="region">지역</Label>
+        <Label htmlFor="region" className="flex items-center gap-2 text-sm font-bold">
+          <MapPin className="h-4 w-4" />
+          지역
+        </Label>
         <Select
           value={formData.region}
           onValueChange={(val) => setFormData(prev => ({ ...prev, region: val }))}
         >
           <SelectTrigger
             id="region"
-            className="w-full"
+            className="h-12 w-full rounded-xl border border-border bg-muted text-base focus:ring-primary"
             aria-invalid={!!errors.region}
             aria-describedby={errors.region ? 'region-error' : undefined}
             onBlur={() => validateField('region')}
@@ -172,17 +178,20 @@ export default function DiagnoseForm({ onSubmit, isLoading }: DiagnoseFormProps)
       </div>
 
       <div className="space-y-2">
-        <Label>직원 수</Label>
+        <Label className="flex items-center gap-2 text-sm font-bold">
+          <Users className="h-4 w-4" />
+          직원 수
+        </Label>
         <RadioGroup
           value={formData.employeeCount}
           onValueChange={(val) => setFormData(prev => ({ ...prev, employeeCount: val }))}
-          className="grid grid-cols-2 gap-3 sm:grid-cols-3"
+          className="grid grid-cols-2 gap-3 sm:grid-cols-4"
         >
           {EMPLOYEE_OPTIONS.map(opt => (
             <label
               key={opt.value}
               className={cn(
-                "flex cursor-pointer items-center justify-center rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2",
+                "flex cursor-pointer items-center justify-center rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2",
                 formData.employeeCount === String(opt.value)
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-input"
@@ -201,7 +210,10 @@ export default function DiagnoseForm({ onSubmit, isLoading }: DiagnoseFormProps)
       </div>
 
       <div className="space-y-2">
-        <Label>연 매출</Label>
+        <Label className="flex items-center gap-2 text-sm font-bold">
+          <Banknote className="h-4 w-4" />
+          연 매출
+        </Label>
         <RadioGroup
           value={formData.annualRevenue}
           onValueChange={(val) => setFormData(prev => ({ ...prev, annualRevenue: val }))}
@@ -211,7 +223,7 @@ export default function DiagnoseForm({ onSubmit, isLoading }: DiagnoseFormProps)
             <label
               key={opt.value}
               className={cn(
-                "flex cursor-pointer items-center justify-center rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2",
+                "flex cursor-pointer items-center justify-center rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2",
                 formData.annualRevenue === String(opt.value)
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-input"
@@ -230,10 +242,14 @@ export default function DiagnoseForm({ onSubmit, isLoading }: DiagnoseFormProps)
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="businessStartDate">창업일</Label>
+        <Label htmlFor="businessStartDate" className="flex items-center gap-2 text-sm font-bold">
+          <Calendar className="h-4 w-4" />
+          창업일
+        </Label>
         <Input
           id="businessStartDate"
           type="date"
+          className="h-12 rounded-xl bg-muted"
           value={formData.businessStartDate}
           onChange={(e) => setFormData(prev => ({ ...prev, businessStartDate: e.target.value }))}
           onBlur={() => validateField('businessStartDate')}
@@ -249,18 +265,28 @@ export default function DiagnoseForm({ onSubmit, isLoading }: DiagnoseFormProps)
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="email">이메일 (선택)</Label>
+        <Label htmlFor="email" className="flex items-center gap-2 text-sm font-bold">
+          <Mail className="h-4 w-4" />
+          이메일
+          <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-normal">선택사항</span>
+        </Label>
         <Input
           id="email"
           type="email"
+          className="h-12 rounded-xl bg-muted"
           placeholder="결과를 이메일로 받아보세요"
           value={formData.email}
           onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
         />
       </div>
 
-      <Button type="submit" disabled={isLoading} className="w-full" size="lg">
+      <Button
+        type="submit"
+        disabled={isLoading}
+        className="h-14 w-full rounded-xl bg-gradient-to-r from-primary to-emerald-600 text-base font-bold text-white shadow-lg shadow-primary/30 transition-all hover:-translate-y-0.5"
+      >
         {isLoading && <Loader2 className="animate-spin" />}
+        {!isLoading && <Search className="h-5 w-5" />}
         {isLoading ? '매칭 중...' : '내 지원금 찾기'}
       </Button>
     </form>

@@ -13,26 +13,44 @@ export default function DiagnosePage() {
   const { submitDiagnosis, isLoading, error } = useDiagnose()
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-12">
+    <div className="mx-auto max-w-[640px] px-4 py-12">
       {/* Header */}
       <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
-          사업 정보 입력
+        <h1 className="text-3xl font-bold text-foreground sm:text-4xl">
+          무료 진단하기
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          아래 정보를 입력하면 받을 수 있는 지원금을 찾아드려요
+          <span className="text-primary font-semibold">3,000여 개의 지원 프로그램 데이터</span>를 기반으로 분석합니다
         </p>
+      </div>
+
+      {/* Progress bar */}
+      <div className="mb-8">
+        <div className="mb-2 flex items-center justify-between text-sm">
+          <span className="font-medium text-foreground">기본 정보 입력</span>
+          <span className="text-muted-foreground">1 / 4 단계</span>
+        </div>
+        <div className="h-2 rounded-full bg-muted">
+          <div className="h-full w-1/4 rounded-full bg-primary transition-all" />
+        </div>
       </div>
 
       {/* Error message */}
       {error && (
-        <div className="mb-6 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+        <div className="mb-6 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
           {error}
         </div>
       )}
 
-      {/* Form */}
-      <DiagnoseForm onSubmit={submitDiagnosis} isLoading={isLoading} />
+      {/* Form card */}
+      <div className="rounded-2xl border border-border bg-white p-6 shadow-[0_4px_24px_rgba(0,0,0,0.04)] sm:p-10">
+        <DiagnoseForm onSubmit={submitDiagnosis} isLoading={isLoading} />
+      </div>
+
+      {/* Disclaimer */}
+      <p className="mt-6 text-center text-xs text-muted-foreground">
+        입력하신 정보는 진단 목적으로만 사용되며, 안전하게 보호됩니다
+      </p>
     </div>
   )
 }

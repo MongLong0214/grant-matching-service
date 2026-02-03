@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono, Noto_Sans_KR } from 'next/font/google'
 import './globals.css'
+import Link from 'next/link'
+import { Wallet } from 'lucide-react'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -37,29 +39,67 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={`${geistSans.variable} ${geistMono.variable} ${notoSansKR.variable} antialiased bg-background text-foreground flex min-h-screen flex-col`}>
-        <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-          <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-            <a href="/" className="text-lg font-bold text-foreground">
-              지원금 매칭
-            </a>
-            <nav className="flex items-center gap-4">
-              <a href="/" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">홈</a>
-              <a href="/diagnose" className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">진단하기</a>
+        {/* Header */}
+        <header className="sticky top-0 z-50 w-full border-b border-border bg-white/80 backdrop-blur">
+          <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-4">
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-2">
+              <Wallet className="h-6 w-6 text-primary" />
+              <span className="text-lg font-bold">Grant Match</span>
+            </Link>
+
+            {/* Navigation */}
+            <nav className="flex items-center gap-6">
+              <span className="cursor-not-allowed text-sm text-muted-foreground">
+                서비스 소개
+              </span>
+              <Link href="/diagnose" className="text-sm font-medium hover:text-primary">
+                진단하기
+              </Link>
+              <button className="rounded-xl bg-primary/10 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/20">
+                로그인
+              </button>
             </nav>
           </div>
         </header>
-        <main className="flex-1">
-          {children}
-        </main>
-        <footer className="border-t border-border bg-muted/50">
-          <div className="mx-auto max-w-5xl px-4 py-8">
-            <div className="flex flex-col items-center gap-3 text-center">
-              <p className="text-sm font-medium text-foreground">지원금 매칭</p>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                본 서비스에서 제공하는 지원금 정보는 참고용이며, 실제 지원 조건 및 세부사항은 해당 기관의 공식 공고를 반드시 확인해주세요.
+
+        {/* Main Content */}
+        <main className="flex-1">{children}</main>
+
+        {/* Footer */}
+        <footer className="w-full border-t bg-white py-10">
+          <div className="mx-auto max-w-[1200px] px-4">
+            <div className="flex items-start justify-between">
+              {/* Logo */}
+              <div className="flex items-center gap-2">
+                <Wallet className="h-5 w-5 text-primary" />
+                <span className="font-bold">Grant Match</span>
+              </div>
+
+              {/* Links */}
+              <div className="flex gap-6 text-sm text-muted-foreground">
+                <Link href="#" className="hover:text-foreground">
+                  이용약관
+                </Link>
+                <Link href="#" className="hover:text-foreground">
+                  개인정보처리방침
+                </Link>
+                <Link href="#" className="hover:text-foreground">
+                  고객센터
+                </Link>
+              </div>
+
+              {/* Copyright */}
+              <p className="text-sm text-muted-foreground">
+                © 2024 Grant Match. All rights reserved.
               </p>
-              <p className="text-xs text-muted-foreground/70">© 2026 지원금 매칭. All rights reserved.</p>
             </div>
+
+            {/* Disclaimer */}
+            <p className="mt-6 text-xs text-gray-400">
+              본 서비스는 정부지원금 정보를 제공하는 서비스이며, 실제 지원금 신청 및 승인은 각 사업 담당 기관의 심사를 거쳐 결정됩니다.
+              제공되는 정보는 참고용이며, 실제 지원 가능 여부는 담당 기관에 문의하시기 바랍니다.
+            </p>
           </div>
         </footer>
       </body>

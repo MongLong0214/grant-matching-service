@@ -1,6 +1,5 @@
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ChevronRight } from 'lucide-react'
+import { Clock, CalendarDays, ArrowRight } from 'lucide-react'
 import { CATEGORY_COLORS } from '@/constants'
 import type { Support } from '@/types'
 
@@ -33,42 +32,64 @@ export default function SupportCard({ support }: SupportCardProps) {
 
   const deadline = formatDeadline(support.endDate)
   const isUrgent = deadline === 'D-Day' || (deadline !== '상시' && deadline !== '마감' && !isNaN(parseInt(deadline.replace('D-', ''))) && parseInt(deadline.replace('D-', '')) <= 7)
+  const isAlwaysOpen = deadline === '상시'
 
   return (
-    <Card className="transition-all duration-200 hover:shadow-md hover:border-primary/30">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className={`${categoryColor.bg} ${categoryColor.text} border-0`}>
-              {support.category}
-            </Badge>
-            <span className={`text-xs font-medium ${isUrgent ? 'text-destructive' : 'text-muted-foreground'}`}>
-              {deadline}
-            </span>
-          </div>
+    <div className="group rounded-2xl border border-transparent bg-card p-6 shadow-sm transition-all hover:border-primary/20 hover:shadow-md">
+      {/* Top Row: Category and Deadline */}
+      <div className="mb-3 flex items-center justify-between">
+        <Badge variant="outline" className={`${categoryColor.bg} ${categoryColor.text} border-0`}>
+          {support.category}
+        </Badge>
+        <div
+          className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold ${
+            isUrgent
+              ? 'bg-red-50 text-red-600'
+              : isAlwaysOpen
+                ? 'bg-emerald-50 text-emerald-600'
+                : 'bg-muted text-muted-foreground'
+          }`}
+        >
+          {isUrgent ? (
+            <Clock className="h-3 w-3" />
+          ) : (
+            <CalendarDays className="h-3 w-3" />
+          )}
+          <span>{deadline}</span>
         </div>
-        <CardTitle className="text-base leading-snug">{support.title}</CardTitle>
-        <CardDescription>{support.organization}</CardDescription>
-      </CardHeader>
+      </div>
+
+      {/* Title */}
+      <h3 className="text-xl font-bold leading-tight text-foreground group-hover:text-primary">
+        {support.title}
+      </h3>
+
+      {/* Organization */}
+      <p className="mt-1 text-sm text-muted-foreground">{support.organization}</p>
+
+      {/* Amount */}
       {support.amount && (
-        <CardContent>
-          <p className="text-sm font-semibold text-primary">{support.amount}</p>
-        </CardContent>
+        <div className="mt-4 rounded-lg bg-muted p-3">
+          <p className="text-xs text-muted-foreground">지원 혜택</p>
+          <p className="mt-1 text-xl font-bold text-primary">{support.amount}</p>
+        </div>
       )}
+
+      {/* Footer */}
       {support.detailUrl && (
-        <CardFooter>
+        <div className="mt-6 flex justify-end border-t border-border pt-4">
           <a
             href={support.detailUrl}
             target="_blank"
             rel="noopener noreferrer"
             aria-label={`${support.title} 자세히 보기`}
-            className="inline-flex items-center text-sm font-medium text-primary hover:underline"
+            className="inline-flex items-center gap-1 text-sm font-bold text-primary transition-all hover:gap-2"
           >
             자세히 보기
-            <ChevronRight aria-hidden="true" className="ml-1 h-4 w-4" />
+            <ArrowRight aria-hidden="true" className="h-4 w-4" />
           </a>
-        </CardFooter>
+        </div>
       )}
-    </Card>
+    </div>
   )
 }
