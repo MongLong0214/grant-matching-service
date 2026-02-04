@@ -25,15 +25,25 @@ export interface Database {
           amount: string | null
           is_active: boolean
           source: string
+          raw_eligibility_text: string | null
+          raw_exclusion_text: string | null
+          raw_preference_text: string | null
+          extraction_confidence: Record<string, number> | null
+          external_id: string | null
           created_at: string
           updated_at: string
         }
-        Insert: Omit<Database["public"]["Tables"]["supports"]["Row"], "id" | "created_at" | "updated_at" | "is_active" | "source"> & {
+        Insert: Omit<Database["public"]["Tables"]["supports"]["Row"], "id" | "created_at" | "updated_at" | "is_active" | "source" | "raw_eligibility_text" | "raw_exclusion_text" | "raw_preference_text" | "extraction_confidence" | "external_id"> & {
           id?: string
           created_at?: string
           updated_at?: string
           is_active?: boolean
           source?: string
+          raw_eligibility_text?: string | null
+          raw_exclusion_text?: string | null
+          raw_preference_text?: string | null
+          extraction_confidence?: Record<string, number> | null
+          external_id?: string | null
         }
         Update: Partial<Database["public"]["Tables"]["supports"]["Row"]>
       }

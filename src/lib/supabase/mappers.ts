@@ -28,6 +28,12 @@ export function mapSupportRow(row: SupportRow): Support {
     isActive: row.is_active,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    source: row.source,
+    rawEligibilityText: row.raw_eligibility_text,
+    rawExclusionText: row.raw_exclusion_text,
+    rawPreferenceText: row.raw_preference_text,
+    extractionConfidence: row.extraction_confidence,
+    externalId: row.external_id,
   }
 }
 

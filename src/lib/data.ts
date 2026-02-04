@@ -5,7 +5,7 @@ const isSupabaseConfigured = () =>
   Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
 
 /**
- * 매칭용 지원금 목록 조회 (상세 자격조건이 있는 시드 데이터만)
+ * 매칭용 지원금 목록 조회 (모든 활성 소스에서 조회)
  * 진단 시 매칭 알고리즘에서 사용
  */
 export async function getActiveSupports(): Promise<Support[]> {
@@ -22,7 +22,6 @@ export async function getActiveSupports(): Promise<Support[]> {
     .from('supports')
     .select('*')
     .eq('is_active', true)
-    .eq('source', 'seed')
     .or(`end_date.is.null,end_date.gte.${today}`)
 
   if (error) throw error

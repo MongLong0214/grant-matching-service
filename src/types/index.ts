@@ -28,6 +28,12 @@ export interface Support {
   isActive: boolean
   createdAt: string
   updatedAt: string
+  source?: string
+  rawEligibilityText?: string | null
+  rawExclusionText?: string | null
+  rawPreferenceText?: string | null
+  extractionConfidence?: Record<string, number> | null
+  externalId?: string | null
 }
 
 export interface Diagnosis {

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { ArrowRight, CheckCircle, FileEdit, Bot, BadgeCheck } from 'lucide-react'
+import { ArrowRight, CheckCircle, FileEdit, Search, BadgeCheck } from 'lucide-react'
 
 /**
  * 랜딩 페이지 - Stitch 디자인 적용
@@ -24,7 +24,7 @@ export default function HomePage() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
               <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
             </span>
-            AI 기반 실시간 조회
+            실시간 데이터 조회
           </div>
 
           {/* Headline */}
@@ -36,7 +36,7 @@ export default function HomePage() {
 
           {/* Subtitle */}
           <p className="mx-auto mb-10 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-            사업 정보만 입력하면 AI가 95,000개 지원사업 중<br className="hidden sm:inline" />
+            사업 정보만 입력하면 95,000개 이상의 지원사업 중<br className="hidden sm:inline" />
             {' '}받을 수 있는 지원금을 무료로 분석해드립니다
           </p>
 
@@ -116,13 +116,13 @@ export default function HomePage() {
             {/* Step 2 */}
             <div className="group rounded-2xl border border-border bg-background p-8 shadow-sm transition-all hover:border-primary/20 hover:shadow-md">
               <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                <Bot className="h-7 w-7 text-primary" />
+                <Search className="h-7 w-7 text-primary" />
               </div>
               <h3 className="mb-3 text-xl font-semibold text-foreground">
-                AI 자동 매칭
+                자동 조건 매칭
               </h3>
               <p className="mb-6 text-muted-foreground">
-                입력하신 조건에 맞는 지원금을 실시간으로 분석합니다
+                입력하신 조건에 맞는 지원금을 자동으로 매칭합니다
               </p>
               <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                 <div className="h-full w-2/3 rounded-full bg-primary transition-all group-hover:w-full"></div>

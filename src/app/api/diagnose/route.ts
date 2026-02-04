@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getActiveSupports, saveDiagnosis } from '@/lib/data'
-import { matchSupports } from '@/lib/matching'
+import { matchSupportsV2 } from '@/lib/matching-v2'
 import { BUSINESS_TYPES, REGIONS, EMPLOYEE_OPTIONS, REVENUE_OPTIONS } from '@/constants'
 
 const validBusinessTypes: readonly string[] = BUSINESS_TYPES
@@ -108,9 +108,10 @@ export async function POST(request: NextRequest) {
       businessStartDate,
       email,
     }
-    const matchedSupports = matchSupports(supports, formData)
+    const matchResult = matchSupportsV2(supports, formData)
 
     // 진단 결과 저장
+    const matchedSupports = matchResult.all.map((s) => s.support)
     const diagnosisId = await saveDiagnosis(formData, matchedSupports)
 
     const duration = Date.now() - startTime
@@ -119,8 +120,19 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         diagnosisId,
-        matchedCount: matchedSupports.length,
+        matchedCount: matchResult.totalCount,
         supports: matchedSupports,
+        scored: matchResult.all.map((s) => ({
+          supportId: s.support.id,
+          score: Math.round(s.score * 100) / 100,
+          tier: s.tier,
+          breakdown: s.breakdown,
+        })),
+        tiers: {
+          exact: matchResult.exact.length,
+          likely: matchResult.likely.length,
+          related: matchResult.related.length,
+        },
       },
       metadata: {
         duration_ms: duration,

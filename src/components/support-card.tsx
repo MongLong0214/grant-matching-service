@@ -67,6 +67,27 @@ export default function SupportCard({ support }: SupportCardProps) {
       {/* Organization */}
       <p className="mt-1 text-sm text-muted-foreground">{support.organization}</p>
 
+      {/* Confidence Badge */}
+      {support.extractionConfidence && (
+        <div className="mt-2 flex items-center gap-1">
+          {(() => {
+            const values = Object.values(support.extractionConfidence)
+            const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0
+            const level = avg >= 0.7 ? 'high' : avg >= 0.4 ? 'medium' : 'low'
+            const config = {
+              high: { label: '높은 신뢰도', bg: 'bg-emerald-100 dark:bg-emerald-900/40', text: 'text-emerald-700 dark:text-emerald-300' },
+              medium: { label: '보통 신뢰도', bg: 'bg-amber-100 dark:bg-amber-900/40', text: 'text-amber-700 dark:text-amber-300' },
+              low: { label: '낮은 신뢰도', bg: 'bg-gray-100 dark:bg-gray-800/40', text: 'text-gray-600 dark:text-gray-400' },
+            }[level]
+            return (
+              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${config.bg} ${config.text}`}>
+                {config.label}
+              </span>
+            )
+          })()}
+        </div>
+      )}
+
       {/* Amount */}
       {support.amount && (
         <div className="mt-4 rounded-lg bg-muted p-3">
