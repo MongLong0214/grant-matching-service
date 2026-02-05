@@ -19,8 +19,9 @@ const geistMono = Geist_Mono({
 const notoSansKR = Noto_Sans_KR({
   weight: ['400', '500', '600', '700'],
   subsets: ['latin'],
-  display: 'swap',
+  display: 'optional',
   variable: '--font-noto-sans-kr',
+  preload: true,
 })
 
 export const metadata: Metadata = {

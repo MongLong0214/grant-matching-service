@@ -86,7 +86,7 @@ export default function HomePage() {
             <Button
               asChild
               size="lg"
-              className="h-13 w-full rounded-xl bg-primary px-8 text-base font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/30 sm:w-auto sm:text-lg"
+              className="h-13 w-full rounded-xl bg-primary px-8 text-base font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-[transform,box-shadow,background-color] duration-300 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/30 sm:w-auto sm:text-lg"
             >
               <Link href="/diagnose" className="inline-flex items-center gap-2">
                 무료 진단 시작하기
@@ -98,7 +98,7 @@ export default function HomePage() {
               asChild
               variant="outline"
               size="lg"
-              className="h-13 w-full rounded-xl border-border/60 bg-white/50 px-8 text-base font-medium backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-white/80 sm:w-auto sm:text-lg"
+              className="h-13 w-full rounded-xl border-border/60 bg-white/50 px-8 text-base font-medium backdrop-blur-sm transition-[transform,border-color,background-color] duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-white/80 sm:w-auto sm:text-lg"
             >
               <Link href="#how-it-works" className="inline-flex items-center gap-2">
                 이용 방법 알아보기
@@ -162,7 +162,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
             {/* Stat 1 */}
-            <div className="group relative overflow-hidden rounded-2xl border border-border/60 bg-white p-8 shadow-sm transition-all duration-300 hover:border-primary/20 hover:shadow-md">
+            <div className="group relative overflow-hidden rounded-2xl border border-border/60 bg-white p-8 shadow-sm transition-[box-shadow,border-color] duration-300 hover:border-primary/20 hover:shadow-md">
               <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary/[0.04] transition-transform duration-500 group-hover:scale-150" />
               <div className="relative">
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
@@ -178,7 +178,7 @@ export default function HomePage() {
             </div>
 
             {/* Stat 2 */}
-            <div className="group relative overflow-hidden rounded-2xl border border-border/60 bg-white p-8 shadow-sm transition-all duration-300 hover:border-primary/20 hover:shadow-md">
+            <div className="group relative overflow-hidden rounded-2xl border border-border/60 bg-white p-8 shadow-sm transition-[box-shadow,border-color] duration-300 hover:border-primary/20 hover:shadow-md">
               <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary/[0.04] transition-transform duration-500 group-hover:scale-150" />
               <div className="relative">
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
@@ -194,7 +194,7 @@ export default function HomePage() {
             </div>
 
             {/* Stat 3 */}
-            <div className="group relative overflow-hidden rounded-2xl border border-border/60 bg-white p-8 shadow-sm transition-all duration-300 hover:border-primary/20 hover:shadow-md">
+            <div className="group relative overflow-hidden rounded-2xl border border-border/60 bg-white p-8 shadow-sm transition-[box-shadow,border-color] duration-300 hover:border-primary/20 hover:shadow-md">
               <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary/[0.04] transition-transform duration-500 group-hover:scale-150" />
               <div className="relative">
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
@@ -248,7 +248,7 @@ export default function HomePage() {
 
             {/* Step 1 */}
             <div className="group relative">
-              <div className="relative rounded-2xl border border-border/60 bg-white p-8 shadow-sm transition-all duration-300 hover:border-primary/25 hover:shadow-lg">
+              <div className="relative flex h-full flex-col rounded-2xl border border-border/60 bg-white p-8 shadow-sm transition-[box-shadow,border-color] duration-300 hover:border-primary/25 hover:shadow-lg">
                 {/* Step number */}
                 <div className="mb-6 flex items-start justify-between">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-primary/20 bg-primary/5 font-bold text-primary transition-colors duration-300 group-hover:border-primary/40 group-hover:bg-primary/10">
@@ -260,7 +260,7 @@ export default function HomePage() {
                 <h3 className="mb-3 text-xl font-semibold text-foreground">
                   사업 정보 입력
                 </h3>
-                <p className="mb-6 text-[15px] leading-relaxed text-muted-foreground">
+                <p className="mb-6 flex-1 text-[15px] leading-relaxed text-muted-foreground">
                   업종, 지역, 매출, 직원 수 등 간단한 사업 정보만 선택하세요.
                   회원가입 없이 바로 시작할 수 있습니다.
                 </p>
@@ -274,7 +274,7 @@ export default function HomePage() {
 
             {/* Step 2 */}
             <div className="group relative">
-              <div className="relative rounded-2xl border border-border/60 bg-white p-8 shadow-sm transition-all duration-300 hover:border-primary/25 hover:shadow-lg">
+              <div className="relative flex h-full flex-col rounded-2xl border border-border/60 bg-white p-8 shadow-sm transition-[box-shadow,border-color] duration-300 hover:border-primary/25 hover:shadow-lg">
                 <div className="mb-6 flex items-start justify-between">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-primary/20 bg-primary/5 font-bold text-primary transition-colors duration-300 group-hover:border-primary/40 group-hover:bg-primary/10">
                     02
@@ -285,7 +285,7 @@ export default function HomePage() {
                 <h3 className="mb-3 text-xl font-semibold text-foreground">
                   자동 조건 매칭
                 </h3>
-                <p className="mb-6 text-[15px] leading-relaxed text-muted-foreground">
+                <p className="mb-6 flex-1 text-[15px] leading-relaxed text-muted-foreground">
                   입력하신 조건과 95,000개 이상의 지원사업 데이터를 실시간으로 비교 분석합니다.
                 </p>
 
@@ -297,7 +297,7 @@ export default function HomePage() {
 
             {/* Step 3 */}
             <div className="group relative">
-              <div className="relative rounded-2xl border border-border/60 bg-white p-8 shadow-sm transition-all duration-300 hover:border-primary/25 hover:shadow-lg">
+              <div className="relative flex h-full flex-col rounded-2xl border border-border/60 bg-white p-8 shadow-sm transition-[box-shadow,border-color] duration-300 hover:border-primary/25 hover:shadow-lg">
                 <div className="mb-6 flex items-start justify-between">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-primary/20 bg-primary/5 font-bold text-primary transition-colors duration-300 group-hover:border-primary/40 group-hover:bg-primary/10">
                     03
@@ -308,7 +308,7 @@ export default function HomePage() {
                 <h3 className="mb-3 text-xl font-semibold text-foreground">
                   맞춤 결과 확인
                 </h3>
-                <p className="mb-6 text-[15px] leading-relaxed text-muted-foreground">
+                <p className="mb-6 flex-1 text-[15px] leading-relaxed text-muted-foreground">
                   신청 가능한 지원금 목록과 상세 조건, 신청 방법을 한눈에 확인하세요.
                 </p>
 
@@ -343,79 +343,79 @@ export default function HomePage() {
           {/* Feature grid */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6">
             {/* Feature 1 */}
-            <div className="group rounded-2xl border border-border/60 bg-white p-7 transition-all duration-300 hover:border-primary/20 hover:shadow-md">
+            <div className="group flex flex-col rounded-2xl border border-border/60 bg-white p-7 transition-[box-shadow,border-color] duration-300 hover:border-primary/20 hover:shadow-md">
               <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-50 transition-colors duration-300 group-hover:bg-primary/10">
                 <Zap className="h-5 w-5 text-primary" />
               </div>
               <h3 className="mb-2 text-lg font-semibold text-foreground">
                 실시간 데이터 분석
               </h3>
-              <p className="text-[15px] leading-relaxed text-muted-foreground">
+              <p className="flex-1 text-[15px] leading-relaxed text-muted-foreground">
                 공공데이터 포털과 연동하여 최신 지원사업 정보를 실시간으로 분석합니다.
               </p>
             </div>
 
             {/* Feature 2 */}
-            <div className="group rounded-2xl border border-border/60 bg-white p-7 transition-all duration-300 hover:border-primary/20 hover:shadow-md">
+            <div className="group flex flex-col rounded-2xl border border-border/60 bg-white p-7 transition-[box-shadow,border-color] duration-300 hover:border-primary/20 hover:shadow-md">
               <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-50 transition-colors duration-300 group-hover:bg-primary/10">
                 <Target className="h-5 w-5 text-primary" />
               </div>
               <h3 className="mb-2 text-lg font-semibold text-foreground">
                 정확한 조건 매칭
               </h3>
-              <p className="text-[15px] leading-relaxed text-muted-foreground">
+              <p className="flex-1 text-[15px] leading-relaxed text-muted-foreground">
                 업종, 지역, 규모 등 5가지 핵심 조건을 분석하여 실제 신청 가능한 지원금만 추천합니다.
               </p>
             </div>
 
             {/* Feature 3 */}
-            <div className="group rounded-2xl border border-border/60 bg-white p-7 transition-all duration-300 hover:border-primary/20 hover:shadow-md">
+            <div className="group flex flex-col rounded-2xl border border-border/60 bg-white p-7 transition-[box-shadow,border-color] duration-300 hover:border-primary/20 hover:shadow-md">
               <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-50 transition-colors duration-300 group-hover:bg-primary/10">
                 <Shield className="h-5 w-5 text-primary" />
               </div>
               <h3 className="mb-2 text-lg font-semibold text-foreground">
                 안전한 정보 보호
               </h3>
-              <p className="text-[15px] leading-relaxed text-muted-foreground">
+              <p className="flex-1 text-[15px] leading-relaxed text-muted-foreground">
                 입력하신 사업 정보는 진단 목적으로만 사용되며, 별도 저장 없이 즉시 폐기됩니다.
               </p>
             </div>
 
             {/* Feature 4 */}
-            <div className="group rounded-2xl border border-border/60 bg-white p-7 transition-all duration-300 hover:border-primary/20 hover:shadow-md">
+            <div className="group flex flex-col rounded-2xl border border-border/60 bg-white p-7 transition-[box-shadow,border-color] duration-300 hover:border-primary/20 hover:shadow-md">
               <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-50 transition-colors duration-300 group-hover:bg-primary/10">
                 <TrendingUp className="h-5 w-5 text-primary" />
               </div>
               <h3 className="mb-2 text-lg font-semibold text-foreground">
                 놓치는 지원금 방지
               </h3>
-              <p className="text-[15px] leading-relaxed text-muted-foreground">
+              <p className="flex-1 text-[15px] leading-relaxed text-muted-foreground">
                 대부분의 사업자가 자격이 되면서도 몰라서 놓치는 지원금을 찾아드립니다.
               </p>
             </div>
 
             {/* Feature 5 */}
-            <div className="group rounded-2xl border border-border/60 bg-white p-7 transition-all duration-300 hover:border-primary/20 hover:shadow-md">
+            <div className="group flex flex-col rounded-2xl border border-border/60 bg-white p-7 transition-[box-shadow,border-color] duration-300 hover:border-primary/20 hover:shadow-md">
               <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-50 transition-colors duration-300 group-hover:bg-primary/10">
                 <RefreshCw className="h-5 w-5 text-primary" />
               </div>
               <h3 className="mb-2 text-lg font-semibold text-foreground">
                 매일 업데이트
               </h3>
-              <p className="text-[15px] leading-relaxed text-muted-foreground">
+              <p className="flex-1 text-[15px] leading-relaxed text-muted-foreground">
                 신규 지원사업이 추가될 때마다 데이터베이스가 자동으로 업데이트됩니다.
               </p>
             </div>
 
             {/* Feature 6 */}
-            <div className="group rounded-2xl border border-border/60 bg-white p-7 transition-all duration-300 hover:border-primary/20 hover:shadow-md">
+            <div className="group flex flex-col rounded-2xl border border-border/60 bg-white p-7 transition-[box-shadow,border-color] duration-300 hover:border-primary/20 hover:shadow-md">
               <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-50 transition-colors duration-300 group-hover:bg-primary/10">
                 <Clock className="h-5 w-5 text-primary" />
               </div>
               <h3 className="mb-2 text-lg font-semibold text-foreground">
                 30초 초간단 진단
               </h3>
-              <p className="text-[15px] leading-relaxed text-muted-foreground">
+              <p className="flex-1 text-[15px] leading-relaxed text-muted-foreground">
                 복잡한 서류 없이 간단한 선택만으로 맞춤 지원금을 바로 확인할 수 있습니다.
               </p>
             </div>
@@ -447,13 +447,13 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {/* Testimonial 1 */}
-            <div className="rounded-2xl border border-border/60 bg-white/80 p-7 shadow-sm backdrop-blur-sm transition-all duration-300 hover:shadow-md">
+            <div className="flex flex-col rounded-2xl border border-border/60 bg-white/80 p-7 shadow-sm backdrop-blur-sm transition-[box-shadow] duration-300 hover:shadow-md">
               <div className="mb-4 flex gap-1">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
                 ))}
               </div>
-              <p className="mb-6 text-[15px] leading-relaxed text-muted-foreground">
+              <p className="mb-6 flex-1 text-[15px] leading-relaxed text-muted-foreground">
                 &ldquo;카페 창업하면서 지원금이 있는지도 몰랐는데, 여기서 진단받고 청년창업지원금 3,000만원을 신청할 수 있었어요.&rdquo;
               </p>
               <div className="flex items-center gap-3">
@@ -468,13 +468,13 @@ export default function HomePage() {
             </div>
 
             {/* Testimonial 2 */}
-            <div className="rounded-2xl border border-border/60 bg-white/80 p-7 shadow-sm backdrop-blur-sm transition-all duration-300 hover:shadow-md">
+            <div className="flex flex-col rounded-2xl border border-border/60 bg-white/80 p-7 shadow-sm backdrop-blur-sm transition-[box-shadow] duration-300 hover:shadow-md">
               <div className="mb-4 flex gap-1">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
                 ))}
               </div>
-              <p className="mb-6 text-[15px] leading-relaxed text-muted-foreground">
+              <p className="mb-6 flex-1 text-[15px] leading-relaxed text-muted-foreground">
                 &ldquo;직원 고용 관련 지원금을 찾고 있었는데, 생각보다 훨씬 많은 지원사업이 있다는 걸 알게 됐습니다. 정말 유용해요.&rdquo;
               </p>
               <div className="flex items-center gap-3">
@@ -489,13 +489,13 @@ export default function HomePage() {
             </div>
 
             {/* Testimonial 3 */}
-            <div className="rounded-2xl border border-border/60 bg-white/80 p-7 shadow-sm backdrop-blur-sm transition-all duration-300 hover:shadow-md">
+            <div className="flex flex-col rounded-2xl border border-border/60 bg-white/80 p-7 shadow-sm backdrop-blur-sm transition-[box-shadow] duration-300 hover:shadow-md">
               <div className="mb-4 flex gap-1">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
                 ))}
               </div>
-              <p className="mb-6 text-[15px] leading-relaxed text-muted-foreground">
+              <p className="mb-6 flex-1 text-[15px] leading-relaxed text-muted-foreground">
                 &ldquo;30초 만에 결과가 나와서 깜짝 놀랐어요. 소상공인 지원금 2건을 찾았고 하나는 이미 신청 완료했습니다.&rdquo;
               </p>
               <div className="flex items-center gap-3">
@@ -529,7 +529,7 @@ export default function HomePage() {
 
           <div className="space-y-4">
             {/* FAQ 1 */}
-            <details className="group rounded-2xl border border-border/60 bg-white transition-all duration-300 hover:border-primary/20 [&[open]]:border-primary/20 [&[open]]:shadow-sm">
+            <details className="group rounded-2xl border border-border/60 bg-white transition-[box-shadow,border-color] duration-300 hover:border-primary/20 [&[open]]:border-primary/20 [&[open]]:shadow-sm">
               <summary className="flex cursor-pointer items-center justify-between p-6 text-left text-base font-semibold text-foreground [&::-webkit-details-marker]:hidden">
                 정말 무료인가요?
                 <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180" />
@@ -541,7 +541,7 @@ export default function HomePage() {
             </details>
 
             {/* FAQ 2 */}
-            <details className="group rounded-2xl border border-border/60 bg-white transition-all duration-300 hover:border-primary/20 [&[open]]:border-primary/20 [&[open]]:shadow-sm">
+            <details className="group rounded-2xl border border-border/60 bg-white transition-[box-shadow,border-color] duration-300 hover:border-primary/20 [&[open]]:border-primary/20 [&[open]]:shadow-sm">
               <summary className="flex cursor-pointer items-center justify-between p-6 text-left text-base font-semibold text-foreground [&::-webkit-details-marker]:hidden">
                 어떤 지원금을 찾아주나요?
                 <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180" />
@@ -553,7 +553,7 @@ export default function HomePage() {
             </details>
 
             {/* FAQ 3 */}
-            <details className="group rounded-2xl border border-border/60 bg-white transition-all duration-300 hover:border-primary/20 [&[open]]:border-primary/20 [&[open]]:shadow-sm">
+            <details className="group rounded-2xl border border-border/60 bg-white transition-[box-shadow,border-color] duration-300 hover:border-primary/20 [&[open]]:border-primary/20 [&[open]]:shadow-sm">
               <summary className="flex cursor-pointer items-center justify-between p-6 text-left text-base font-semibold text-foreground [&::-webkit-details-marker]:hidden">
                 입력한 개인정보는 안전한가요?
                 <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180" />
@@ -565,7 +565,7 @@ export default function HomePage() {
             </details>
 
             {/* FAQ 4 */}
-            <details className="group rounded-2xl border border-border/60 bg-white transition-all duration-300 hover:border-primary/20 [&[open]]:border-primary/20 [&[open]]:shadow-sm">
+            <details className="group rounded-2xl border border-border/60 bg-white transition-[box-shadow,border-color] duration-300 hover:border-primary/20 [&[open]]:border-primary/20 [&[open]]:shadow-sm">
               <summary className="flex cursor-pointer items-center justify-between p-6 text-left text-base font-semibold text-foreground [&::-webkit-details-marker]:hidden">
                 진단 결과가 나온 후 어떻게 신청하나요?
                 <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180" />
@@ -577,7 +577,7 @@ export default function HomePage() {
             </details>
 
             {/* FAQ 5 */}
-            <details className="group rounded-2xl border border-border/60 bg-white transition-all duration-300 hover:border-primary/20 [&[open]]:border-primary/20 [&[open]]:shadow-sm">
+            <details className="group rounded-2xl border border-border/60 bg-white transition-[box-shadow,border-color] duration-300 hover:border-primary/20 [&[open]]:border-primary/20 [&[open]]:shadow-sm">
               <summary className="flex cursor-pointer items-center justify-between p-6 text-left text-base font-semibold text-foreground [&::-webkit-details-marker]:hidden">
                 개인사업자도 이용할 수 있나요?
                 <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180" />
@@ -633,7 +633,7 @@ export default function HomePage() {
                 <Button
                   asChild
                   size="lg"
-                  className="h-13 w-full rounded-xl bg-white px-8 text-base font-semibold text-emerald-700 shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/95 hover:shadow-xl sm:w-auto sm:text-lg"
+                  className="h-13 w-full rounded-xl bg-white px-8 text-base font-semibold text-emerald-700 shadow-lg transition-[transform,box-shadow,background-color] duration-300 hover:-translate-y-0.5 hover:bg-white/95 hover:shadow-xl sm:w-auto sm:text-lg"
                 >
                   <Link href="/diagnose" className="inline-flex items-center gap-2">
                     무료 진단 시작하기
