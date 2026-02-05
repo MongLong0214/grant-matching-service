@@ -59,9 +59,6 @@ export default function RootLayout({
               <Link href="/diagnose" className="text-sm md:text-base font-medium hover:text-primary">
                 진단하기
               </Link>
-              <button className="rounded-xl bg-primary/10 px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base font-medium text-primary hover:bg-primary/20">
-                로그인
-              </button>
             </nav>
           </div>
         </header>
