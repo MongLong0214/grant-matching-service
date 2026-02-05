@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Loader2, Store, MapPin, Users, Banknote, Calendar, Mail, Search } from 'lucide-react'
+import { Loader2, Store, MapPin, Users, Banknote, Calendar, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { BUSINESS_TYPES, REGIONS, EMPLOYEE_OPTIONS, REVENUE_OPTIONS } from '@/constants'
 import type { DiagnoseFormData } from '@/types'
@@ -29,7 +29,6 @@ export default function DiagnoseForm({ onSubmit, isLoading }: DiagnoseFormProps)
     employeeCount: '',
     annualRevenue: '',
     businessStartDate: '',
-    email: '',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -109,7 +108,7 @@ export default function DiagnoseForm({ onSubmit, isLoading }: DiagnoseFormProps)
       employeeCount: Number(formData.employeeCount),
       annualRevenue: Number(formData.annualRevenue),
       businessStartDate: formData.businessStartDate,
-      email: formData.email || undefined,
+      email: undefined,
     })
   }
 
@@ -262,22 +261,6 @@ export default function DiagnoseForm({ onSubmit, isLoading }: DiagnoseFormProps)
             {errors.businessStartDate}
           </p>
         )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="email" className="flex items-center gap-2 text-sm font-bold">
-          <Mail className="h-4 w-4" />
-          이메일
-          <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-normal">선택사항</span>
-        </Label>
-        <Input
-          id="email"
-          type="email"
-          className="h-12 rounded-xl bg-muted"
-          placeholder="결과를 이메일로 받아보세요"
-          value={formData.email}
-          onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-        />
       </div>
 
       <Button
