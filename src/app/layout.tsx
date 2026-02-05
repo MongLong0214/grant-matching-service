@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono, Noto_Sans_KR } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import Link from 'next/link'
 import { Wallet } from 'lucide-react'
@@ -65,6 +66,7 @@ export default function RootLayout({
 
         {/* Main Content */}
         <main className="flex-1">{children}</main>
+        <Analytics />
 
         {/* Footer */}
         <footer className="w-full border-t bg-white py-10">
