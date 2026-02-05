@@ -52,10 +52,7 @@ export default function RootLayout({
             </Link>
 
             {/* Navigation */}
-            <nav className="flex items-center gap-3 md:gap-6">
-              <span className="hidden md:inline-flex cursor-not-allowed text-sm text-muted-foreground">
-                서비스 소개
-              </span>
+            <nav className="flex items-center">
               <Link href="/diagnose" className="text-sm md:text-base font-medium hover:text-primary">
                 진단하기
               </Link>
