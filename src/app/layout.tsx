@@ -25,12 +25,73 @@ const notoSansKR = Noto_Sans_KR({
 })
 
 export const metadata: Metadata = {
-  title: '지원금 찾기 - 정부지원금 자동 매칭',
-  description: '소상공인 사업 정보 입력하면 받을 수 있는 정부지원금을 자동으로 매칭해주는 서비스. 30초면 끝, 가입 없음.',
+  metadataBase: new URL('https://grant-matching-service.vercel.app'),
+  title: {
+    default: 'Grant Match - 정부지원금 자동 매칭 | 30초 무료 진단',
+    template: '%s | Grant Match',
+  },
+  description:
+    '사업 정보만 입력하면 95,000개 이상의 정부지원금 중 받을 수 있는 지원금을 30초 만에 무료로 찾아드립니다. 소상공인, 중소기업, 창업자를 위한 맞춤 지원금 매칭 서비스.',
+  keywords: [
+    '정부지원금',
+    '소상공인 지원금',
+    '중소기업 지원금',
+    '창업 지원금',
+    '정부 보조금',
+    '사업자 지원금',
+    '지원금 찾기',
+    '지원금 매칭',
+    '소상공인시장진흥공단',
+    '중소벤처기업부',
+    '고용지원금',
+    '수출지원금',
+    'R&D 지원금',
+    '정부지원사업',
+    '보조금 신청',
+    '지원금 자격',
+  ],
+  authors: [{ name: 'Grant Match' }],
+  creator: 'Grant Match',
+  publisher: 'Grant Match',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   openGraph: {
-    title: '지원금 찾기 - 정부지원금 자동 매칭',
-    description: '30초 만에 받을 수 있는 정부지원금을 찾아보세요.',
     type: 'website',
+    locale: 'ko_KR',
+    url: 'https://grant-matching-service.vercel.app',
+    siteName: 'Grant Match',
+    title: 'Grant Match - 정부지원금 자동 매칭 | 30초 무료 진단',
+    description:
+      '사업 정보만 입력하면 95,000개 이상의 정부지원금 중 받을 수 있는 지원금을 30초 만에 무료로 찾아드립니다.',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Grant Match - 정부지원금 자동 매칭',
+    description:
+      '30초 만에 받을 수 있는 정부지원금을 무료로 찾아보세요.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  alternates: {
+    canonical: 'https://grant-matching-service.vercel.app',
+  },
+  verification: {
+    google: 'GOOGLE_VERIFICATION_CODE',
+    other: {
+      'naver-site-verification': 'NAVER_VERIFICATION_CODE',
+    },
   },
 }
 
@@ -42,6 +103,51 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={`${geistSans.variable} ${geistMono.variable} ${notoSansKR.variable} antialiased bg-background text-foreground flex min-h-screen flex-col`}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@graph': [
+                {
+                  '@type': 'Organization',
+                  name: 'Grant Match',
+                  url: 'https://grant-matching-service.vercel.app',
+                  logo: 'https://grant-matching-service.vercel.app/icon-512.png',
+                  description: '정부지원금 자동 매칭 서비스',
+                },
+                {
+                  '@type': 'WebApplication',
+                  name: 'Grant Match',
+                  url: 'https://grant-matching-service.vercel.app',
+                  applicationCategory: 'FinanceApplication',
+                  operatingSystem: 'Web',
+                  offers: {
+                    '@type': 'Offer',
+                    price: '0',
+                    priceCurrency: 'KRW',
+                  },
+                  description:
+                    '사업 정보만 입력하면 95,000개 이상의 정부지원금 중 받을 수 있는 지원금을 30초 만에 무료로 찾아드립니다.',
+                  inLanguage: 'ko',
+                },
+                {
+                  '@type': 'WebSite',
+                  name: 'Grant Match',
+                  url: 'https://grant-matching-service.vercel.app',
+                  inLanguage: 'ko',
+                  potentialAction: {
+                    '@type': 'SearchAction',
+                    target:
+                      'https://grant-matching-service.vercel.app/diagnose',
+                    'query-input':
+                      'required name=search_term_string',
+                  },
+                },
+              ],
+            }),
+          }}
+        />
         {/* Header */}
         <header className="sticky top-0 z-50 w-full border-b border-border bg-white/80 backdrop-blur">
           <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-4">
