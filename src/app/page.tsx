@@ -35,10 +35,12 @@ export default function HomePage() {
           - Dual CTA buttons
           - Trust indicators
           ============================================================ */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-background via-background to-emerald-50/30 px-4 pb-24 pt-16 sm:pb-32 sm:pt-24">
+      <section aria-label="서비스 소개" className="relative overflow-hidden bg-gradient-to-b from-background via-background to-emerald-50/30 px-4 pb-24 pt-16 sm:pb-32 sm:pt-24">
         {/* Dot grid pattern overlay */}
         <div
           className="absolute inset-0 opacity-[0.03]"
+          role="img"
+          aria-hidden="true"
           style={{
             backgroundImage:
               'radial-gradient(circle, currentColor 1px, transparent 1px)',
@@ -47,15 +49,15 @@ export default function HomePage() {
         />
 
         {/* Gradient orbs for depth */}
-        <div className="absolute -left-48 top-0 h-[500px] w-[500px] rounded-full bg-primary/[0.04] blur-[100px]" />
-        <div className="absolute -right-48 bottom-0 h-[600px] w-[600px] rounded-full bg-emerald-400/[0.06] blur-[120px]" />
-        <div className="absolute left-1/2 top-1/3 h-[300px] w-[300px] -translate-x-1/2 rounded-full bg-primary/[0.03] blur-[80px]" />
+        <div className="absolute -left-48 top-0 h-[500px] w-[500px] rounded-full bg-primary/[0.04] blur-[100px]" role="img" aria-hidden="true" />
+        <div className="absolute -right-48 bottom-0 h-[600px] w-[600px] rounded-full bg-emerald-400/[0.06] blur-[120px]" role="img" aria-hidden="true" />
+        <div className="absolute left-1/2 top-1/3 h-[300px] w-[300px] -translate-x-1/2 rounded-full bg-primary/[0.03] blur-[80px]" role="img" aria-hidden="true" />
 
         <div className="relative mx-auto max-w-5xl">
           {/* Top badge */}
           <div className="mb-10 flex justify-center">
             <div className="inline-flex items-center gap-2.5 rounded-full border border-primary/15 bg-white/70 px-4 py-2 text-sm font-medium text-foreground shadow-sm backdrop-blur-md">
-              <span className="relative flex h-2 w-2">
+              <span className="relative flex h-2 w-2" aria-hidden="true">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
               </span>
@@ -90,7 +92,7 @@ export default function HomePage() {
             >
               <Link href="/diagnose" className="inline-flex items-center gap-2">
                 무료 진단 시작하기
-                <ArrowRight className="h-5 w-5" />
+                <ArrowRight className="h-5 w-5" aria-hidden="true" />
               </Link>
             </Button>
 
@@ -109,17 +111,17 @@ export default function HomePage() {
           {/* Trust indicators row */}
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
-              <CheckCircle className="h-4 w-4 text-primary" />
+              <CheckCircle className="h-4 w-4 text-primary" aria-hidden="true" />
               회원가입 없이 조회
             </span>
-            <span className="hidden h-3 w-px bg-border sm:inline-block" />
+            <span className="hidden h-3 w-px bg-border sm:inline-block" aria-hidden="true" />
             <span className="inline-flex items-center gap-1.5">
-              <Shield className="h-4 w-4 text-primary" />
+              <Shield className="h-4 w-4 text-primary" aria-hidden="true" />
               개인정보 보호
             </span>
-            <span className="hidden h-3 w-px bg-border sm:inline-block" />
+            <span className="hidden h-3 w-px bg-border sm:inline-block" aria-hidden="true" />
             <span className="inline-flex items-center gap-1.5">
-              <Zap className="h-4 w-4 text-primary" />
+              <Zap className="h-4 w-4 text-primary" aria-hidden="true" />
               100% 무료 서비스
             </span>
           </div>
@@ -130,25 +132,25 @@ export default function HomePage() {
           SOCIAL PROOF / TRUST BAR
           Scrolling logos / usage count strip
           ============================================================ */}
-      <section className="border-y border-border/60 bg-muted/30 py-5">
+      <section aria-label="서비스 통계" className="border-y border-border/60 bg-muted/30 py-5">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-10 gap-y-3 px-4 text-sm text-muted-foreground">
           <span className="flex items-center gap-2 font-medium text-foreground">
-            <Users className="h-4 w-4 text-primary" />
+            <Users className="h-4 w-4 text-primary" aria-hidden="true" />
             10,000+ 사업자가 이용중
           </span>
-          <span className="hidden h-4 w-px bg-border/60 sm:block" />
+          <span className="hidden h-4 w-px bg-border/60 sm:block" aria-hidden="true" />
           <span className="flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-muted-foreground/60" />
+            <Building2 className="h-4 w-4 text-muted-foreground/60" aria-hidden="true" />
             중소벤처기업부 데이터 연동
           </span>
-          <span className="hidden h-4 w-px bg-border/60 sm:block" />
+          <span className="hidden h-4 w-px bg-border/60 sm:block" aria-hidden="true" />
           <span className="flex items-center gap-2">
-            <RefreshCw className="h-4 w-4 text-muted-foreground/60" />
+            <RefreshCw className="h-4 w-4 text-muted-foreground/60" aria-hidden="true" />
             매일 업데이트
           </span>
-          <span className="hidden h-4 w-px bg-border/60 sm:block" />
+          <span className="hidden h-4 w-px bg-border/60 sm:block" aria-hidden="true" />
           <span className="flex items-center gap-2">
-            <Database className="h-4 w-4 text-muted-foreground/60" />
+            <Database className="h-4 w-4 text-muted-foreground/60" aria-hidden="true" />
             공공데이터 기반
           </span>
         </div>
@@ -158,15 +160,15 @@ export default function HomePage() {
           STATS SECTION
           Three stat cards with icons and visual weight
           ============================================================ */}
-      <section className="px-4 py-20 sm:py-24">
+      <section aria-label="서비스 주요 수치" className="px-4 py-20 sm:py-24">
         <div className="mx-auto max-w-6xl">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
             {/* Stat 1 */}
             <div className="group relative overflow-hidden rounded-2xl border border-border/60 bg-white p-8 shadow-sm transition-[box-shadow,border-color] duration-300 hover:border-primary/20 hover:shadow-md">
-              <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary/[0.04] transition-transform duration-500 group-hover:scale-150" />
+              <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary/[0.04] transition-transform duration-500 group-hover:scale-150" role="img" aria-hidden="true" />
               <div className="relative">
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                  <Database className="h-6 w-6 text-primary" />
+                  <Database className="h-6 w-6 text-primary" aria-hidden="true" />
                 </div>
                 <p className="text-4xl font-bold tracking-tight text-foreground md:text-5xl">
                   95,000<span className="text-primary">+</span>
@@ -179,10 +181,10 @@ export default function HomePage() {
 
             {/* Stat 2 */}
             <div className="group relative overflow-hidden rounded-2xl border border-border/60 bg-white p-8 shadow-sm transition-[box-shadow,border-color] duration-300 hover:border-primary/20 hover:shadow-md">
-              <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary/[0.04] transition-transform duration-500 group-hover:scale-150" />
+              <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary/[0.04] transition-transform duration-500 group-hover:scale-150" role="img" aria-hidden="true" />
               <div className="relative">
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                  <Clock className="h-6 w-6 text-primary" />
+                  <Clock className="h-6 w-6 text-primary" aria-hidden="true" />
                 </div>
                 <p className="text-4xl font-bold tracking-tight text-foreground md:text-5xl">
                   30<span className="text-primary">초</span>
@@ -195,10 +197,10 @@ export default function HomePage() {
 
             {/* Stat 3 */}
             <div className="group relative overflow-hidden rounded-2xl border border-border/60 bg-white p-8 shadow-sm transition-[box-shadow,border-color] duration-300 hover:border-primary/20 hover:shadow-md">
-              <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary/[0.04] transition-transform duration-500 group-hover:scale-150" />
+              <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary/[0.04] transition-transform duration-500 group-hover:scale-150" role="img" aria-hidden="true" />
               <div className="relative">
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                  <Target className="h-6 w-6 text-primary" />
+                  <Target className="h-6 w-6 text-primary" aria-hidden="true" />
                 </div>
                 <p className="text-4xl font-bold tracking-tight text-foreground md:text-5xl">
                   5<span className="text-primary">가지</span>
@@ -216,10 +218,12 @@ export default function HomePage() {
           HOW IT WORKS
           Numbered steps with connecting line
           ============================================================ */}
-      <section id="how-it-works" className="relative bg-muted/20 px-4 py-20 sm:py-24">
+      <section id="how-it-works" aria-label="이용 방법" className="relative bg-muted/20 px-4 py-20 sm:py-24">
         {/* Subtle pattern */}
         <div
           className="absolute inset-0 opacity-[0.015]"
+          role="img"
+          aria-hidden="true"
           style={{
             backgroundImage:
               'radial-gradient(circle, currentColor 1px, transparent 1px)',
@@ -244,7 +248,7 @@ export default function HomePage() {
           {/* Steps with connector */}
           <div className="relative grid grid-cols-1 gap-8 md:grid-cols-3 md:gap-6">
             {/* Connecting line (desktop only) */}
-            <div className="absolute left-[calc(16.67%+24px)] right-[calc(16.67%+24px)] top-[60px] hidden h-px bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20 md:block" />
+            <div className="absolute left-[calc(16.67%+24px)] right-[calc(16.67%+24px)] top-[60px] hidden h-px bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20 md:block" aria-hidden="true" />
 
             {/* Step 1 */}
             <div className="group relative">
@@ -254,7 +258,7 @@ export default function HomePage() {
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-primary/20 bg-primary/5 font-bold text-primary transition-colors duration-300 group-hover:border-primary/40 group-hover:bg-primary/10">
                     01
                   </div>
-                  <FileEdit className="h-6 w-6 text-muted-foreground/30 transition-colors duration-300 group-hover:text-primary/50" />
+                  <FileEdit className="h-6 w-6 text-muted-foreground/30 transition-colors duration-300 group-hover:text-primary/50" aria-hidden="true" />
                 </div>
 
                 <h3 className="mb-3 text-xl font-semibold text-foreground">
@@ -266,7 +270,7 @@ export default function HomePage() {
                 </p>
 
                 {/* Progress indicator */}
-                <div className="h-1 overflow-hidden rounded-full bg-muted">
+                <div className="h-1 overflow-hidden rounded-full bg-muted" aria-hidden="true">
                   <div className="h-full w-1/3 rounded-full bg-gradient-to-r from-primary to-emerald-400 transition-all duration-700 group-hover:w-full" />
                 </div>
               </div>
@@ -279,7 +283,7 @@ export default function HomePage() {
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-primary/20 bg-primary/5 font-bold text-primary transition-colors duration-300 group-hover:border-primary/40 group-hover:bg-primary/10">
                     02
                   </div>
-                  <Search className="h-6 w-6 text-muted-foreground/30 transition-colors duration-300 group-hover:text-primary/50" />
+                  <Search className="h-6 w-6 text-muted-foreground/30 transition-colors duration-300 group-hover:text-primary/50" aria-hidden="true" />
                 </div>
 
                 <h3 className="mb-3 text-xl font-semibold text-foreground">
@@ -289,7 +293,7 @@ export default function HomePage() {
                   입력하신 조건과 95,000개 이상의 지원사업 데이터를 실시간으로 비교 분석합니다.
                 </p>
 
-                <div className="h-1 overflow-hidden rounded-full bg-muted">
+                <div className="h-1 overflow-hidden rounded-full bg-muted" aria-hidden="true">
                   <div className="h-full w-2/3 rounded-full bg-gradient-to-r from-primary to-emerald-400 transition-all duration-700 group-hover:w-full" />
                 </div>
               </div>
@@ -302,7 +306,7 @@ export default function HomePage() {
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-primary/20 bg-primary/5 font-bold text-primary transition-colors duration-300 group-hover:border-primary/40 group-hover:bg-primary/10">
                     03
                   </div>
-                  <BadgeCheck className="h-6 w-6 text-muted-foreground/30 transition-colors duration-300 group-hover:text-primary/50" />
+                  <BadgeCheck className="h-6 w-6 text-muted-foreground/30 transition-colors duration-300 group-hover:text-primary/50" aria-hidden="true" />
                 </div>
 
                 <h3 className="mb-3 text-xl font-semibold text-foreground">
@@ -312,7 +316,7 @@ export default function HomePage() {
                   신청 가능한 지원금 목록과 상세 조건, 신청 방법을 한눈에 확인하세요.
                 </p>
 
-                <div className="h-1 overflow-hidden rounded-full bg-muted">
+                <div className="h-1 overflow-hidden rounded-full bg-muted" aria-hidden="true">
                   <div className="h-full w-full rounded-full bg-gradient-to-r from-primary to-emerald-400" />
                 </div>
               </div>
@@ -325,7 +329,7 @@ export default function HomePage() {
           FEATURES SECTION
           Why choose us: grid of value propositions
           ============================================================ */}
-      <section className="px-4 py-20 sm:py-24">
+      <section aria-label="서비스 특장점" className="px-4 py-20 sm:py-24">
         <div className="mx-auto max-w-6xl">
           {/* Section Header */}
           <div className="mb-16 text-center">
@@ -345,7 +349,7 @@ export default function HomePage() {
             {/* Feature 1 */}
             <div className="group flex flex-col rounded-2xl border border-border/60 bg-white p-7 transition-[box-shadow,border-color] duration-300 hover:border-primary/20 hover:shadow-md">
               <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-50 transition-colors duration-300 group-hover:bg-primary/10">
-                <Zap className="h-5 w-5 text-primary" />
+                <Zap className="h-5 w-5 text-primary" aria-hidden="true" />
               </div>
               <h3 className="mb-2 text-lg font-semibold text-foreground">
                 실시간 데이터 분석
@@ -358,7 +362,7 @@ export default function HomePage() {
             {/* Feature 2 */}
             <div className="group flex flex-col rounded-2xl border border-border/60 bg-white p-7 transition-[box-shadow,border-color] duration-300 hover:border-primary/20 hover:shadow-md">
               <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-50 transition-colors duration-300 group-hover:bg-primary/10">
-                <Target className="h-5 w-5 text-primary" />
+                <Target className="h-5 w-5 text-primary" aria-hidden="true" />
               </div>
               <h3 className="mb-2 text-lg font-semibold text-foreground">
                 정확한 조건 매칭
@@ -371,7 +375,7 @@ export default function HomePage() {
             {/* Feature 3 */}
             <div className="group flex flex-col rounded-2xl border border-border/60 bg-white p-7 transition-[box-shadow,border-color] duration-300 hover:border-primary/20 hover:shadow-md">
               <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-50 transition-colors duration-300 group-hover:bg-primary/10">
-                <Shield className="h-5 w-5 text-primary" />
+                <Shield className="h-5 w-5 text-primary" aria-hidden="true" />
               </div>
               <h3 className="mb-2 text-lg font-semibold text-foreground">
                 안전한 정보 보호
@@ -384,7 +388,7 @@ export default function HomePage() {
             {/* Feature 4 */}
             <div className="group flex flex-col rounded-2xl border border-border/60 bg-white p-7 transition-[box-shadow,border-color] duration-300 hover:border-primary/20 hover:shadow-md">
               <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-50 transition-colors duration-300 group-hover:bg-primary/10">
-                <TrendingUp className="h-5 w-5 text-primary" />
+                <TrendingUp className="h-5 w-5 text-primary" aria-hidden="true" />
               </div>
               <h3 className="mb-2 text-lg font-semibold text-foreground">
                 놓치는 지원금 방지
@@ -397,7 +401,7 @@ export default function HomePage() {
             {/* Feature 5 */}
             <div className="group flex flex-col rounded-2xl border border-border/60 bg-white p-7 transition-[box-shadow,border-color] duration-300 hover:border-primary/20 hover:shadow-md">
               <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-50 transition-colors duration-300 group-hover:bg-primary/10">
-                <RefreshCw className="h-5 w-5 text-primary" />
+                <RefreshCw className="h-5 w-5 text-primary" aria-hidden="true" />
               </div>
               <h3 className="mb-2 text-lg font-semibold text-foreground">
                 매일 업데이트
@@ -410,7 +414,7 @@ export default function HomePage() {
             {/* Feature 6 */}
             <div className="group flex flex-col rounded-2xl border border-border/60 bg-white p-7 transition-[box-shadow,border-color] duration-300 hover:border-primary/20 hover:shadow-md">
               <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-50 transition-colors duration-300 group-hover:bg-primary/10">
-                <Clock className="h-5 w-5 text-primary" />
+                <Clock className="h-5 w-5 text-primary" aria-hidden="true" />
               </div>
               <h3 className="mb-2 text-lg font-semibold text-foreground">
                 30초 초간단 진단
@@ -427,10 +431,10 @@ export default function HomePage() {
           TESTIMONIALS / SOCIAL PROOF
           User quotes in glassmorphic cards
           ============================================================ */}
-      <section className="relative overflow-hidden bg-muted/20 px-4 py-20 sm:py-24">
+      <section aria-label="사용자 후기" className="relative overflow-hidden bg-muted/20 px-4 py-20 sm:py-24">
         {/* Background decoration */}
-        <div className="absolute -left-32 top-1/2 h-[400px] w-[400px] -translate-y-1/2 rounded-full bg-primary/[0.03] blur-[80px]" />
-        <div className="absolute -right-32 top-1/3 h-[300px] w-[300px] rounded-full bg-emerald-300/[0.04] blur-[60px]" />
+        <div className="absolute -left-32 top-1/2 h-[400px] w-[400px] -translate-y-1/2 rounded-full bg-primary/[0.03] blur-[80px]" role="img" aria-hidden="true" />
+        <div className="absolute -right-32 top-1/3 h-[300px] w-[300px] rounded-full bg-emerald-300/[0.04] blur-[60px]" role="img" aria-hidden="true" />
 
         <div className="relative mx-auto max-w-6xl">
           <div className="mb-16 text-center">
@@ -450,8 +454,9 @@ export default function HomePage() {
             <div className="flex flex-col rounded-2xl border border-border/60 bg-white/80 p-7 shadow-sm backdrop-blur-sm transition-[box-shadow] duration-300 hover:shadow-md">
               <div className="mb-4 flex gap-1">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                  <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" aria-hidden="true" />
                 ))}
+                <span className="sr-only">별점 5점 만점</span>
               </div>
               <p className="mb-6 flex-1 text-[15px] leading-relaxed text-muted-foreground">
                 &ldquo;카페 창업하면서 지원금이 있는지도 몰랐는데, 여기서 진단받고 청년창업지원금 3,000만원을 신청할 수 있었어요.&rdquo;
@@ -471,8 +476,9 @@ export default function HomePage() {
             <div className="flex flex-col rounded-2xl border border-border/60 bg-white/80 p-7 shadow-sm backdrop-blur-sm transition-[box-shadow] duration-300 hover:shadow-md">
               <div className="mb-4 flex gap-1">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                  <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" aria-hidden="true" />
                 ))}
+                <span className="sr-only">별점 5점 만점</span>
               </div>
               <p className="mb-6 flex-1 text-[15px] leading-relaxed text-muted-foreground">
                 &ldquo;직원 고용 관련 지원금을 찾고 있었는데, 생각보다 훨씬 많은 지원사업이 있다는 걸 알게 됐습니다. 정말 유용해요.&rdquo;
@@ -492,8 +498,9 @@ export default function HomePage() {
             <div className="flex flex-col rounded-2xl border border-border/60 bg-white/80 p-7 shadow-sm backdrop-blur-sm transition-[box-shadow] duration-300 hover:shadow-md">
               <div className="mb-4 flex gap-1">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                  <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" aria-hidden="true" />
                 ))}
+                <span className="sr-only">별점 5점 만점</span>
               </div>
               <p className="mb-6 flex-1 text-[15px] leading-relaxed text-muted-foreground">
                 &ldquo;30초 만에 결과가 나와서 깜짝 놀랐어요. 소상공인 지원금 2건을 찾았고 하나는 이미 신청 완료했습니다.&rdquo;
@@ -516,7 +523,7 @@ export default function HomePage() {
           FAQ SECTION
           Common questions in clean accordion-style layout
           ============================================================ */}
-      <section className="px-4 py-20 sm:py-24">
+      <section aria-label="자주 묻는 질문" className="px-4 py-20 sm:py-24">
         <div className="mx-auto max-w-3xl">
           <div className="mb-16 text-center">
             <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-primary">
@@ -532,7 +539,7 @@ export default function HomePage() {
             <details className="group rounded-2xl border border-border/60 bg-white transition-[box-shadow,border-color] duration-300 hover:border-primary/20 [&[open]]:border-primary/20 [&[open]]:shadow-sm">
               <summary className="flex cursor-pointer items-center justify-between p-6 text-left text-base font-semibold text-foreground [&::-webkit-details-marker]:hidden">
                 정말 무료인가요?
-                <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180" />
+                <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180" aria-hidden="true" />
               </summary>
               <div className="px-6 pb-6 text-[15px] leading-relaxed text-muted-foreground">
                 네, Grant Match의 지원금 진단 서비스는 100% 무료입니다. 숨겨진 비용이나 추가 결제는 일절 없으며,
@@ -544,7 +551,7 @@ export default function HomePage() {
             <details className="group rounded-2xl border border-border/60 bg-white transition-[box-shadow,border-color] duration-300 hover:border-primary/20 [&[open]]:border-primary/20 [&[open]]:shadow-sm">
               <summary className="flex cursor-pointer items-center justify-between p-6 text-left text-base font-semibold text-foreground [&::-webkit-details-marker]:hidden">
                 어떤 지원금을 찾아주나요?
-                <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180" />
+                <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180" aria-hidden="true" />
               </summary>
               <div className="px-6 pb-6 text-[15px] leading-relaxed text-muted-foreground">
                 중소벤처기업부, 소상공인시장진흥공단, 지방자치단체 등에서 운영하는 정부지원금, 보조금, 융자, 세금감면 등
@@ -556,7 +563,7 @@ export default function HomePage() {
             <details className="group rounded-2xl border border-border/60 bg-white transition-[box-shadow,border-color] duration-300 hover:border-primary/20 [&[open]]:border-primary/20 [&[open]]:shadow-sm">
               <summary className="flex cursor-pointer items-center justify-between p-6 text-left text-base font-semibold text-foreground [&::-webkit-details-marker]:hidden">
                 입력한 개인정보는 안전한가요?
-                <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180" />
+                <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180" aria-hidden="true" />
               </summary>
               <div className="px-6 pb-6 text-[15px] leading-relaxed text-muted-foreground">
                 입력하신 사업 정보는 지원금 매칭 분석에만 사용되며, 분석 완료 후 즉시 폐기됩니다.
@@ -568,7 +575,7 @@ export default function HomePage() {
             <details className="group rounded-2xl border border-border/60 bg-white transition-[box-shadow,border-color] duration-300 hover:border-primary/20 [&[open]]:border-primary/20 [&[open]]:shadow-sm">
               <summary className="flex cursor-pointer items-center justify-between p-6 text-left text-base font-semibold text-foreground [&::-webkit-details-marker]:hidden">
                 진단 결과가 나온 후 어떻게 신청하나요?
-                <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180" />
+                <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180" aria-hidden="true" />
               </summary>
               <div className="px-6 pb-6 text-[15px] leading-relaxed text-muted-foreground">
                 진단 결과에서 각 지원사업의 상세 정보와 함께 신청 방법, 담당기관 연락처를 제공합니다.
@@ -580,7 +587,7 @@ export default function HomePage() {
             <details className="group rounded-2xl border border-border/60 bg-white transition-[box-shadow,border-color] duration-300 hover:border-primary/20 [&[open]]:border-primary/20 [&[open]]:shadow-sm">
               <summary className="flex cursor-pointer items-center justify-between p-6 text-left text-base font-semibold text-foreground [&::-webkit-details-marker]:hidden">
                 개인사업자도 이용할 수 있나요?
-                <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180" />
+                <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180" aria-hidden="true" />
               </summary>
               <div className="px-6 pb-6 text-[15px] leading-relaxed text-muted-foreground">
                 물론입니다. 개인사업자, 법인사업자, 예비창업자 모두 이용 가능합니다.
@@ -595,17 +602,19 @@ export default function HomePage() {
           FINAL CTA BANNER
           Emerald gradient with floating decorative elements
           ============================================================ */}
-      <section className="px-4 pb-20 sm:pb-24">
+      <section aria-label="무료 진단 시작" className="px-4 pb-20 sm:pb-24">
         <div className="mx-auto max-w-5xl">
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-primary to-teal-600 px-8 py-16 text-center shadow-2xl shadow-primary/20 sm:px-16 sm:py-20">
             {/* Decorative floating elements */}
-            <div className="absolute -left-16 -top-16 h-48 w-48 rounded-full bg-white/[0.06]" />
-            <div className="absolute -bottom-20 -right-20 h-56 w-56 rounded-full bg-white/[0.04]" />
-            <div className="absolute left-1/3 top-0 h-32 w-32 rounded-full bg-white/[0.03]" />
+            <div className="absolute -left-16 -top-16 h-48 w-48 rounded-full bg-white/[0.06]" role="img" aria-hidden="true" />
+            <div className="absolute -bottom-20 -right-20 h-56 w-56 rounded-full bg-white/[0.04]" role="img" aria-hidden="true" />
+            <div className="absolute left-1/3 top-0 h-32 w-32 rounded-full bg-white/[0.03]" role="img" aria-hidden="true" />
 
             {/* Dot pattern overlay */}
             <div
               className="absolute inset-0 opacity-[0.04]"
+              role="img"
+              aria-hidden="true"
               style={{
                 backgroundImage:
                   'radial-gradient(circle, white 1px, transparent 1px)',
@@ -616,7 +625,7 @@ export default function HomePage() {
             <div className="relative">
               {/* Urgency badge */}
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-sm font-medium text-white/90 backdrop-blur-sm">
-                <RefreshCw className="h-3.5 w-3.5" />
+                <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
                 매일 새로운 지원금 업데이트
               </div>
 
@@ -637,7 +646,7 @@ export default function HomePage() {
                 >
                   <Link href="/diagnose" className="inline-flex items-center gap-2">
                     무료 진단 시작하기
-                    <ArrowRight className="h-5 w-5" />
+                    <ArrowRight className="h-5 w-5" aria-hidden="true" />
                   </Link>
                 </Button>
               </div>

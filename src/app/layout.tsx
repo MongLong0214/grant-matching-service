@@ -103,6 +103,9 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={`${geistSans.variable} ${geistMono.variable} ${notoSansKR.variable} antialiased bg-background text-foreground flex min-h-screen flex-col`}>
+        <a href="#main-content" className="skip-to-content">
+          본문으로 건너뛰기
+        </a>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -149,7 +152,7 @@ export default function RootLayout({
           }}
         />
         {/* Header */}
-        <header className="sticky top-0 z-50 w-full border-b border-border bg-white/80 backdrop-blur">
+        <header role="banner" className="sticky top-0 z-50 w-full border-b border-border bg-white/80 backdrop-blur">
           <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-4">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2">
@@ -158,7 +161,7 @@ export default function RootLayout({
             </Link>
 
             {/* Navigation */}
-            <nav className="flex items-center">
+            <nav role="navigation" aria-label="메인 네비게이션" className="flex items-center">
               <Link href="/diagnose" className="text-sm md:text-base font-medium hover:text-primary">
                 진단하기
               </Link>
@@ -167,12 +170,12 @@ export default function RootLayout({
         </header>
 
         {/* Main Content */}
-        <main className="flex-1">{children}</main>
+        <main id="main-content" className="flex-1">{children}</main>
         <Analytics />
         <SpeedInsights />
 
         {/* Footer */}
-        <footer className="w-full border-t bg-white py-10">
+        <footer role="contentinfo" className="w-full border-t bg-white py-10">
           <div className="mx-auto max-w-[1200px] px-4">
             <div className="flex flex-col gap-6 text-center md:flex-row md:items-start md:justify-between md:text-left">
               {/* Logo */}

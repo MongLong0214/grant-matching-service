@@ -4,12 +4,13 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Combobox } from '@/components/ui/combobox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Loader2, Store, MapPin, Users, Banknote, Calendar, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { BUSINESS_TYPES, REGIONS, EMPLOYEE_OPTIONS, REVENUE_OPTIONS } from '@/constants'
 import type { DiagnoseFormData } from '@/types'
+import FormProgress from '@/components/form-progress'
 
 interface DiagnoseFormProps {
   onSubmit: (data: DiagnoseFormData) => Promise<void>
@@ -31,6 +32,14 @@ export default function DiagnoseForm({ onSubmit, isLoading }: DiagnoseFormProps)
     businessStartDate: '',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const filledCount = [
+    formData.businessType,
+    formData.region,
+    formData.employeeCount,
+    formData.annualRevenue,
+    formData.businessStartDate,
+  ].filter(Boolean).length
 
   function validateField(fieldName: string) {
     setFormData(prev => {
@@ -112,31 +121,25 @@ export default function DiagnoseForm({ onSubmit, isLoading }: DiagnoseFormProps)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6" aria-label="사업 진단 폼">
+      <FormProgress filledCount={filledCount} totalCount={5} />
+
       <div className="space-y-2">
         <Label htmlFor="businessType" className="flex items-center gap-2 text-sm font-bold">
-          <Store className="h-4 w-4" />
+          <Store className="h-4 w-4" aria-hidden="true" />
           업종
         </Label>
-        <Select
+        <Combobox
+          id="businessType"
+          options={[...BUSINESS_TYPES]}
           value={formData.businessType}
           onValueChange={(val) => setFormData(prev => ({ ...prev, businessType: val }))}
-        >
-          <SelectTrigger
-            id="businessType"
-            className="h-12 w-full rounded-xl border border-border bg-muted text-base focus:ring-primary"
-            aria-invalid={!!errors.businessType}
-            aria-describedby={errors.businessType ? 'businessType-error' : undefined}
-            onBlur={() => validateField('businessType')}
-          >
-            <SelectValue placeholder="업종을 선택해주세요" />
-          </SelectTrigger>
-          <SelectContent>
-            {BUSINESS_TYPES.map(type => (
-              <SelectItem key={type} value={type}>{type}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          placeholder="업종을 선택해주세요"
+          aria-label="업종 선택"
+          aria-invalid={!!errors.businessType}
+          aria-describedby={errors.businessType ? 'businessType-error' : undefined}
+          onBlur={() => validateField('businessType')}
+        />
         {errors.businessType && (
           <p id="businessType-error" className="text-xs text-destructive" role="alert">
             {errors.businessType}
@@ -146,28 +149,20 @@ export default function DiagnoseForm({ onSubmit, isLoading }: DiagnoseFormProps)
 
       <div className="space-y-2">
         <Label htmlFor="region" className="flex items-center gap-2 text-sm font-bold">
-          <MapPin className="h-4 w-4" />
+          <MapPin className="h-4 w-4" aria-hidden="true" />
           지역
         </Label>
-        <Select
+        <Combobox
+          id="region"
+          options={[...REGIONS]}
           value={formData.region}
           onValueChange={(val) => setFormData(prev => ({ ...prev, region: val }))}
-        >
-          <SelectTrigger
-            id="region"
-            className="h-12 w-full rounded-xl border border-border bg-muted text-base focus:ring-primary"
-            aria-invalid={!!errors.region}
-            aria-describedby={errors.region ? 'region-error' : undefined}
-            onBlur={() => validateField('region')}
-          >
-            <SelectValue placeholder="지역을 선택해주세요" />
-          </SelectTrigger>
-          <SelectContent>
-            {REGIONS.map(region => (
-              <SelectItem key={region} value={region}>{region}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          placeholder="지역을 선택해주세요"
+          aria-label="지역 선택"
+          aria-invalid={!!errors.region}
+          aria-describedby={errors.region ? 'region-error' : undefined}
+          onBlur={() => validateField('region')}
+        />
         {errors.region && (
           <p id="region-error" className="text-xs text-destructive" role="alert">
             {errors.region}
@@ -177,10 +172,11 @@ export default function DiagnoseForm({ onSubmit, isLoading }: DiagnoseFormProps)
 
       <div className="space-y-2">
         <Label className="flex items-center gap-2 text-sm font-bold">
-          <Users className="h-4 w-4" />
+          <Users className="h-4 w-4" aria-hidden="true" />
           직원 수
         </Label>
         <RadioGroup
+          aria-label="직원 수 선택"
           value={formData.employeeCount}
           onValueChange={(val) => setFormData(prev => ({ ...prev, employeeCount: val }))}
           className="grid grid-cols-2 gap-3 sm:grid-cols-4"
@@ -209,10 +205,11 @@ export default function DiagnoseForm({ onSubmit, isLoading }: DiagnoseFormProps)
 
       <div className="space-y-2">
         <Label className="flex items-center gap-2 text-sm font-bold">
-          <Banknote className="h-4 w-4" />
+          <Banknote className="h-4 w-4" aria-hidden="true" />
           연 매출
         </Label>
         <RadioGroup
+          aria-label="연 매출 선택"
           value={formData.annualRevenue}
           onValueChange={(val) => setFormData(prev => ({ ...prev, annualRevenue: val }))}
           className="grid grid-cols-2 gap-3 sm:grid-cols-3"
@@ -241,7 +238,7 @@ export default function DiagnoseForm({ onSubmit, isLoading }: DiagnoseFormProps)
 
       <div className="space-y-2">
         <Label htmlFor="businessStartDate" className="flex items-center gap-2 text-sm font-bold">
-          <Calendar className="h-4 w-4" />
+          <Calendar className="h-4 w-4" aria-hidden="true" />
           창업일
         </Label>
         <Input
@@ -252,6 +249,8 @@ export default function DiagnoseForm({ onSubmit, isLoading }: DiagnoseFormProps)
           onChange={(e) => setFormData(prev => ({ ...prev, businessStartDate: e.target.value }))}
           onBlur={() => validateField('businessStartDate')}
           max={new Date().toISOString().split('T')[0]}
+          aria-label="창업일 선택"
+          aria-required="true"
           aria-invalid={!!errors.businessStartDate}
           aria-describedby={errors.businessStartDate ? 'businessStartDate-error' : undefined}
         />
@@ -265,16 +264,17 @@ export default function DiagnoseForm({ onSubmit, isLoading }: DiagnoseFormProps)
       <Button
         type="submit"
         disabled={isLoading}
+        aria-label={isLoading ? '분석 진행 중' : '내 지원금 찾기'}
         className="h-14 w-full rounded-xl bg-gradient-to-r from-primary to-emerald-600 text-base font-bold text-white shadow-lg shadow-primary/30 transition-all hover:-translate-y-0.5"
       >
         {isLoading ? (
           <>
-            <Loader2 className="h-5 w-5 animate-spin" />
+            <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
             분석 중...
           </>
         ) : (
           <>
-            <Search className="h-5 w-5" />
+            <Search className="h-5 w-5" aria-hidden="true" />
             내 지원금 찾기
           </>
         )}
