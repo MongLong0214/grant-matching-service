@@ -108,7 +108,6 @@ export default function DiagnoseForm({ onSubmit, isLoading }: DiagnoseFormProps)
       employeeCount: Number(formData.employeeCount),
       annualRevenue: Number(formData.annualRevenue),
       businessStartDate: formData.businessStartDate,
-      email: undefined,
     })
   }
 

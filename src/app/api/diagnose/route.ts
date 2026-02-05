@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-    const { businessType, region, employeeCount, annualRevenue, businessStartDate, email } = body
+    const { businessType, region, employeeCount, annualRevenue, businessStartDate } = body
 
     // 필수값 존재 검증
     if (!businessType || !region || !employeeCount || !annualRevenue || !businessStartDate) {
@@ -88,14 +88,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 이메일 검증 (선택 필드)
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return NextResponse.json(
-        { success: false, error: '유효하지 않은 이메일 형식입니다.' },
-        { status: 400 }
-      )
-    }
-
     // 활성화된 지원금 조회
     const supports = await getActiveSupports()
 
@@ -106,7 +98,6 @@ export async function POST(request: NextRequest) {
       employeeCount: parsedEmployeeCount,
       annualRevenue: parsedRevenue,
       businessStartDate,
-      email,
     }
     const matchResult = matchSupportsV2(supports, formData)
 

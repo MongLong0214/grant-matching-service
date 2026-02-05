@@ -58,7 +58,6 @@ export default async function ResultPage({ params }: ResultPageProps) {
     employeeCount: diagnosis.employeeCount,
     annualRevenue: diagnosis.annualRevenue,
     businessStartDate: diagnosis.businessStartDate,
-    email: undefined,
   })
 
   return (

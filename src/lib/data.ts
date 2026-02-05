@@ -108,7 +108,6 @@ const devDiagnoses = new Map<string, {
   employeeCount: number
   annualRevenue: number
   businessStartDate: string
-  email: string | null
   matchedSupportIds: string[]
   matchedCount: number
   createdAt: string
@@ -134,7 +133,6 @@ export async function saveDiagnosis(input: DiagnoseFormData, matchedSupports: Su
       employeeCount: input.employeeCount,
       annualRevenue: input.annualRevenue,
       businessStartDate: input.businessStartDate,
-      email: input.email || null,
       matchedSupportIds: matchedSupports.map((s) => s.id),
       matchedCount: matchedSupports.length,
       createdAt: new Date().toISOString(),
@@ -153,7 +151,6 @@ export async function saveDiagnosis(input: DiagnoseFormData, matchedSupports: Su
       employee_count: input.employeeCount,
       annual_revenue: input.annualRevenue,
       business_start_date: input.businessStartDate,
-      email: input.email || null,
       matched_support_ids: matchedSupports.map((s) => s.id),
       matched_count: matchedSupports.length,
     })
@@ -171,9 +168,7 @@ export async function getDiagnosis(id: string) {
   if (!isSupabaseConfigured()) {
     const diagnosis = devDiagnoses.get(id)
     if (!diagnosis) return null
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { email, ...withoutEmail } = diagnosis
-    return withoutEmail
+    return diagnosis
   }
 
   const { createClient } = await import('@/lib/supabase/server')

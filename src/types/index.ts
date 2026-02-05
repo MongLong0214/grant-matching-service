@@ -43,7 +43,6 @@ export interface Diagnosis {
   employeeCount: number
   annualRevenue: number
   businessStartDate: string
-  email: string | null
   matchedSupportIds: string[]
   matchedCount: number
   createdAt: string
@@ -55,5 +54,4 @@ export interface DiagnoseFormData {
   employeeCount: number
   annualRevenue: number
   businessStartDate: string
-  email?: string
 }
