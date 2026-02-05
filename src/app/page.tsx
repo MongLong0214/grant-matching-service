@@ -20,10 +20,7 @@ export default function HomePage() {
         <div className="relative mx-auto max-w-4xl text-center">
           {/* Badge with pulse */}
           <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-background/80 px-4 py-2 text-sm font-medium text-foreground backdrop-blur-sm">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
-            </span>
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
             실시간 데이터 조회
           </div>
 
@@ -45,7 +42,7 @@ export default function HomePage() {
             <Button
               asChild
               size="lg"
-              className="h-14 bg-primary px-8 text-base font-semibold text-primary-foreground shadow-lg shadow-primary/30 transition-all hover:scale-105 hover:bg-primary/90 hover:shadow-xl sm:text-lg"
+              className="h-12 bg-primary px-8 text-base font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-105 hover:bg-primary/90 hover:shadow-xl sm:text-lg"
             >
               <Link href="/diagnose" className="inline-flex items-center gap-2">
                 무료 진단 시작하기
@@ -151,7 +148,7 @@ export default function HomePage() {
       {/* CTA Banner */}
       <section className="px-4 py-20">
         <div className="mx-auto max-w-5xl">
-          <div className="overflow-hidden rounded-3xl bg-gradient-to-r from-primary to-emerald-400 px-8 py-16 text-center shadow-2xl sm:px-16">
+          <div className="overflow-hidden rounded-3xl bg-gradient-to-r from-primary to-emerald-400 dark:from-emerald-600 dark:to-emerald-500 px-8 py-16 text-center shadow-2xl sm:px-16">
             <h2 className="mb-4 text-3xl font-bold text-white sm:text-4xl">
               지금 바로 무료 진단을 시작하세요
             </h2>
@@ -162,7 +159,7 @@ export default function HomePage() {
               asChild
               size="lg"
               variant="secondary"
-              className="h-14 bg-white px-8 text-base font-semibold text-primary shadow-lg transition-all hover:scale-105 hover:bg-white/90 sm:text-lg"
+              className="h-12 bg-white px-8 text-base font-semibold text-primary shadow-lg transition-all hover:scale-105 hover:bg-white/90 sm:text-lg"
             >
               <Link href="/diagnose" className="inline-flex items-center gap-2">
                 무료 진단 시작하기

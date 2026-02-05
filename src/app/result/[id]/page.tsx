@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { getDiagnosis, getSupportsByIds } from '@/lib/data'
+import { matchSupportsV2 } from '@/lib/matching-v2'
 import SupportList from '@/components/support-list'
 import { Button } from '@/components/ui/button'
 import { CheckCircle, Pencil, RotateCcw } from 'lucide-react'
@@ -50,15 +51,38 @@ export default async function ResultPage({ params }: ResultPageProps) {
 
   const supports = await getSupportsByIds(diagnosis.matchedSupportIds)
 
+  // Re-run matching to get scored data with tier assignments
+  const matchResult = matchSupportsV2(supports, {
+    businessType: diagnosis.businessType,
+    region: diagnosis.region,
+    employeeCount: diagnosis.employeeCount,
+    annualRevenue: diagnosis.annualRevenue,
+    businessStartDate: diagnosis.businessStartDate,
+    email: undefined,
+  })
+
   return (
     <div className="mx-auto max-w-[960px] px-4 py-10">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold text-foreground">맞춤 지원금 결과</h1>
         {supports.length > 0 && (
-          <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-primary">
-            <CheckCircle className="h-4 w-4" />
-            <span className="text-sm font-semibold">{supports.length}개 매칭됨</span>
+          <div className="flex items-center gap-2">
+            {matchResult.exact.length > 0 && (
+              <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                맞춤 {matchResult.exact.length}
+              </span>
+            )}
+            {matchResult.likely.length > 0 && (
+              <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
+                추천 {matchResult.likely.length}
+              </span>
+            )}
+            {matchResult.related.length > 0 && (
+              <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-700">
+                관련 {matchResult.related.length}
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -81,7 +105,14 @@ export default async function ResultPage({ params }: ResultPageProps) {
       </div>
 
       {/* Support List */}
-      <SupportList supports={supports} />
+      <SupportList
+        supports={supports}
+        scoredSupports={matchResult.all.map(s => ({
+          support: s.support,
+          score: s.score,
+          tier: s.tier,
+        }))}
+      />
 
       {/* Bottom Actions */}
       <div className="mt-10 flex flex-col items-center gap-4">

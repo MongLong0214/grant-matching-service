@@ -285,9 +285,17 @@ export default function DiagnoseForm({ onSubmit, isLoading }: DiagnoseFormProps)
         disabled={isLoading}
         className="h-14 w-full rounded-xl bg-gradient-to-r from-primary to-emerald-600 text-base font-bold text-white shadow-lg shadow-primary/30 transition-all hover:-translate-y-0.5"
       >
-        {isLoading && <Loader2 className="animate-spin" />}
-        {!isLoading && <Search className="h-5 w-5" />}
-        {isLoading ? '매칭 중...' : '내 지원금 찾기'}
+        {isLoading ? (
+          <>
+            <Loader2 className="h-5 w-5 animate-spin" />
+            분석 중...
+          </>
+        ) : (
+          <>
+            <Search className="h-5 w-5" />
+            내 지원금 찾기
+          </>
+        )}
       </Button>
     </form>
   )

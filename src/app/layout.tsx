@@ -49,14 +49,14 @@ export default function RootLayout({
             </Link>
 
             {/* Navigation */}
-            <nav className="flex items-center gap-6">
-              <span className="cursor-not-allowed text-sm text-muted-foreground">
+            <nav className="flex items-center gap-3 md:gap-6">
+              <span className="hidden md:inline-flex cursor-not-allowed text-sm text-muted-foreground">
                 서비스 소개
               </span>
-              <Link href="/diagnose" className="text-sm font-medium hover:text-primary">
+              <Link href="/diagnose" className="text-sm md:text-base font-medium hover:text-primary">
                 진단하기
               </Link>
-              <button className="rounded-xl bg-primary/10 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/20">
+              <button className="rounded-xl bg-primary/10 px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base font-medium text-primary hover:bg-primary/20">
                 로그인
               </button>
             </nav>
@@ -69,15 +69,15 @@ export default function RootLayout({
         {/* Footer */}
         <footer className="w-full border-t bg-white py-10">
           <div className="mx-auto max-w-[1200px] px-4">
-            <div className="flex items-start justify-between">
+            <div className="flex flex-col gap-6 text-center md:flex-row md:items-start md:justify-between md:text-left">
               {/* Logo */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2 md:justify-start">
                 <Wallet className="h-5 w-5 text-primary" />
                 <span className="font-bold">Grant Match</span>
               </div>
 
               {/* Links */}
-              <div className="flex gap-6 text-sm text-muted-foreground">
+              <div className="flex justify-center gap-4 md:gap-6 text-sm text-muted-foreground">
                 <Link href="#" className="hover:text-foreground">
                   이용약관
                 </Link>
@@ -91,12 +91,12 @@ export default function RootLayout({
 
               {/* Copyright */}
               <p className="text-sm text-muted-foreground">
-                © 2024 Grant Match. All rights reserved.
+                © 2025 Grant Match. All rights reserved.
               </p>
             </div>
 
             {/* Disclaimer */}
-            <p className="mt-6 text-xs text-gray-400">
+            <p className="mt-6 text-xs md:text-xs text-gray-400">
               본 서비스는 정부지원금 정보를 제공하는 서비스이며, 실제 지원금 신청 및 승인은 각 사업 담당 기관의 심사를 거쳐 결정됩니다.
               제공되는 정보는 참고용이며, 실제 지원 가능 여부는 담당 기관에 문의하시기 바랍니다.
             </p>

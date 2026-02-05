@@ -24,17 +24,6 @@ export default function DiagnosePage() {
         </p>
       </div>
 
-      {/* Progress bar */}
-      <div className="mb-8">
-        <div className="mb-2 flex items-center justify-between text-sm">
-          <span className="font-medium text-foreground">기본 정보 입력</span>
-          <span className="text-muted-foreground">1 / 4 단계</span>
-        </div>
-        <div className="h-2 rounded-full bg-muted">
-          <div className="h-full w-1/4 rounded-full bg-primary transition-all" />
-        </div>
-      </div>
-
       {/* Error message */}
       {error && (
         <div className="mb-6 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">

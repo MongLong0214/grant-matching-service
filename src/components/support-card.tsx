@@ -35,7 +35,7 @@ export default function SupportCard({ support }: SupportCardProps) {
   const isAlwaysOpen = deadline === '상시'
 
   return (
-    <div className="group rounded-2xl border border-transparent bg-card p-6 shadow-sm transition-all hover:border-primary/20 hover:shadow-md">
+    <div className="group rounded-2xl border border-border bg-card p-6 shadow-sm transition-all duration-200 hover:border-primary/40 hover:shadow-md">
       {/* Top Row: Category and Deadline */}
       <div className="mb-3 flex items-center justify-between">
         <Badge variant="outline" className={`${categoryColor.bg} ${categoryColor.text} border-0`}>
@@ -104,7 +104,7 @@ export default function SupportCard({ support }: SupportCardProps) {
             target="_blank"
             rel="noopener noreferrer"
             aria-label={`${support.title} 자세히 보기`}
-            className="inline-flex items-center gap-1 text-sm font-bold text-primary transition-all hover:gap-2"
+            className="inline-flex items-center gap-1.5 text-sm font-bold text-primary transition-all hover:gap-2.5"
           >
             자세히 보기
             <ArrowRight aria-hidden="true" className="h-4 w-4" />
