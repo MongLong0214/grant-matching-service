@@ -1,7 +1,7 @@
 import { DiagnoseFormData, Support } from "@/types"
 
 export function matchSupports(supports: Support[], input: DiagnoseFormData): Support[] {
-  const businessAgeMonths = calculateBusinessAge(input.businessStartDate)
+  const businessAgeMonths = input.businessAge
 
   return supports.filter((support) => {
     if (support.targetRegions && support.targetRegions.length > 0) {
@@ -38,15 +38,4 @@ export function matchSupports(supports: Support[], input: DiagnoseFormData): Sup
 
     return true
   })
-}
-
-function calculateBusinessAge(startDateString: string): number {
-  const startDate = new Date(startDateString)
-  const now = new Date()
-
-  const months =
-    (now.getFullYear() - startDate.getFullYear()) * 12 +
-    (now.getMonth() - startDate.getMonth())
-
-  return Math.max(0, months)
 }

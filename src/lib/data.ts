@@ -1,5 +1,5 @@
 import { SEED_SUPPORTS } from '@/lib/seed-data'
-import type { Support, DiagnoseFormData } from '@/types'
+import type { Support, MatchedScore, UserInput, Diagnosis } from '@/types'
 
 const isSupabaseConfigured = () =>
   Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
@@ -90,70 +90,124 @@ export async function getSupportsByIds(ids: string[]): Promise<Support[]> {
   const { mapSupportRows } = await import('@/lib/supabase/mappers')
   const supabase = await createClient()
 
-  const { data: rows, error } = await supabase
-    .from('supports')
-    .select('*')
-    .in('id', ids)
+  // PostgREST URL 길이 제한으로 배치 처리 (UUID 100개씩)
+  const CHUNK_SIZE = 100
+  const chunks: string[][] = []
+  for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+    chunks.push(ids.slice(i, i + CHUNK_SIZE))
+  }
 
-  if (error) throw error
-  return mapSupportRows(rows || [])
+  const results = await Promise.all(
+    chunks.map(async (chunk) => {
+      const { data: rows, error } = await supabase
+        .from('supports')
+        .select('*')
+        .in('id', chunk)
+      if (error) throw error
+      return rows || []
+    })
+  )
+
+  const allRows = results.flat()
+  return mapSupportRows(allRows)
 }
 
 // In-memory store for dev mode diagnoses (bounded to prevent memory leaks)
 const MAX_DEV_DIAGNOSES = 1000
-const devDiagnoses = new Map<string, {
-  id: string
-  businessType: string
-  region: string
-  employeeCount: number
-  annualRevenue: number
-  businessStartDate: string
-  matchedSupportIds: string[]
-  matchedCount: number
-  createdAt: string
-}>()
+const devDiagnoses = new Map<string, Diagnosis>()
 
 /**
- * 진단 결과 저장
+ * 진단 결과 저장 (듀얼 트랙: 개인/사업자)
  * Supabase 미설정 시 인메모리 저장
  */
-export async function saveDiagnosis(input: DiagnoseFormData, matchedSupports: Support[]): Promise<string> {
+export async function saveDiagnosis(
+  input: UserInput,
+  matchedSupports: Support[],
+  matchedScores?: MatchedScore[],
+): Promise<string> {
   const id = crypto.randomUUID()
+  const now = new Date().toISOString()
+  const supportIds = matchedSupports.map((s) => s.id)
 
   if (!isSupabaseConfigured()) {
-    // Evict oldest entry if at capacity
     if (devDiagnoses.size >= MAX_DEV_DIAGNOSES) {
       const oldestKey = devDiagnoses.keys().next().value
       if (oldestKey) devDiagnoses.delete(oldestKey)
     }
-    devDiagnoses.set(id, {
+
+    const base: Diagnosis = {
       id,
-      businessType: input.businessType,
+      userType: input.userType,
+      businessType: null,
       region: input.region,
-      employeeCount: input.employeeCount,
-      annualRevenue: input.annualRevenue,
-      businessStartDate: input.businessStartDate,
-      matchedSupportIds: matchedSupports.map((s) => s.id),
+      employeeCount: null,
+      annualRevenue: null,
+      businessAge: null,
+      founderAge: null,
+      ageGroup: null,
+      gender: null,
+      householdType: null,
+      incomeLevel: null,
+      employmentStatus: null,
+      interestCategories: null,
+      matchedSupportIds: supportIds,
       matchedCount: matchedSupports.length,
-      createdAt: new Date().toISOString(),
-    })
+      matchedScores: matchedScores ?? null,
+      createdAt: now,
+    }
+
+    if (input.userType === 'business') {
+      base.businessType = input.businessType
+      base.employeeCount = input.employeeCount
+      base.annualRevenue = input.annualRevenue
+      base.businessAge = input.businessAge
+      base.founderAge = input.founderAge
+    } else {
+      base.ageGroup = input.ageGroup
+      base.gender = input.gender
+      base.householdType = input.householdType
+      base.incomeLevel = input.incomeLevel
+      base.employmentStatus = input.employmentStatus
+      base.interestCategories = input.interestCategories
+    }
+
+    devDiagnoses.set(id, base)
     return id
   }
 
   const { createClient } = await import('@/lib/supabase/server')
   const supabase = await createClient()
 
+  const commonPayload = {
+    region: input.region,
+    matched_support_ids: supportIds,
+    matched_count: matchedSupports.length,
+    matched_scores: matchedScores ?? null,
+    user_type: input.userType,
+  }
+
+  const insertPayload = input.userType === 'business'
+    ? {
+        ...commonPayload,
+        business_type: input.businessType,
+        employee_count: input.employeeCount,
+        annual_revenue: input.annualRevenue,
+        business_age: input.businessAge,
+        founder_age: input.founderAge,
+      }
+    : {
+        ...commonPayload,
+        age_group: input.ageGroup,
+        gender: input.gender,
+        household_type: input.householdType,
+        income_level: input.incomeLevel,
+        employment_status: input.employmentStatus,
+        interest_categories: input.interestCategories,
+      }
+
   const { data, error } = await supabase
     .from('diagnoses')
-    .insert({
-      business_type: input.businessType,
-      region: input.region,
-      employee_count: input.employeeCount,
-      annual_revenue: input.annualRevenue,
-      business_start_date: input.businessStartDate,
-      matched_support_ids: matchedSupports.map((s) => s.id),
-      matched_count: matchedSupports.length,
-    })
+    .insert(insertPayload)
     .select()
     .single()
 
@@ -162,16 +216,15 @@ export async function saveDiagnosis(input: DiagnoseFormData, matchedSupports: Su
 }
 
 /**
- * 진단 결과 조회
+ * 진단 결과 조회 (듀얼 트랙)
  */
-export async function getDiagnosis(id: string) {
+export async function getDiagnosis(id: string): Promise<Diagnosis | null> {
   if (!isSupabaseConfigured()) {
-    const diagnosis = devDiagnoses.get(id)
-    if (!diagnosis) return null
-    return diagnosis
+    return devDiagnoses.get(id) ?? null
   }
 
   const { createClient } = await import('@/lib/supabase/server')
+  const { mapDiagnosisRow } = await import('@/lib/supabase/mappers')
   const supabase = await createClient()
 
   const { data, error } = await supabase
@@ -182,15 +235,5 @@ export async function getDiagnosis(id: string) {
 
   if (error || !data) return null
 
-  return {
-    id: data.id,
-    businessType: data.business_type,
-    region: data.region,
-    employeeCount: data.employee_count,
-    annualRevenue: data.annual_revenue,
-    businessStartDate: data.business_start_date,
-    matchedSupportIds: data.matched_support_ids || [],
-    matchedCount: data.matched_count,
-    createdAt: data.created_at,
-  }
+  return mapDiagnosisRow(data)
 }

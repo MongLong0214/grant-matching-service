@@ -2,9 +2,12 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono, Noto_Sans_KR } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
+import Script from 'next/script'
 import './globals.css'
 import Link from 'next/link'
 import { Wallet } from 'lucide-react'
+
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -173,6 +176,17 @@ export default function RootLayout({
         <main id="main-content" className="flex-1">{children}</main>
         <Analytics />
         <SpeedInsights />
+        {GA_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga4-init" strategy="afterInteractive">
+              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}');`}
+            </Script>
+          </>
+        )}
 
         {/* Footer */}
         <footer role="contentinfo" className="w-full border-t bg-white py-10">
@@ -186,14 +200,11 @@ export default function RootLayout({
 
               {/* Links */}
               <div className="flex justify-center gap-4 md:gap-6 text-sm text-muted-foreground">
-                <Link href="#" className="hover:text-foreground">
+                <Link href="/terms" className="hover:text-foreground">
                   이용약관
                 </Link>
-                <Link href="#" className="hover:text-foreground">
+                <Link href="/privacy" className="hover:text-foreground">
                   개인정보처리방침
-                </Link>
-                <Link href="#" className="hover:text-foreground">
-                  고객센터
                 </Link>
               </div>
 

@@ -1,109 +1,125 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getActiveSupports, saveDiagnosis } from '@/lib/data'
-import { matchSupportsV2 } from '@/lib/matching-v2'
-import { BUSINESS_TYPES, REGIONS, EMPLOYEE_OPTIONS, REVENUE_OPTIONS } from '@/constants'
+import { matchSupportsV4Flat } from '@/lib/matching-v4'
+import {
+  BUSINESS_TYPES, REGIONS, EMPLOYEE_OPTIONS, REVENUE_OPTIONS, BUSINESS_AGE_OPTIONS, FOUNDER_AGE_OPTIONS,
+  AGE_GROUP_OPTIONS, GENDER_OPTIONS, HOUSEHOLD_TYPE_OPTIONS, INCOME_LEVEL_OPTIONS, EMPLOYMENT_STATUS_OPTIONS, INTEREST_CATEGORY_OPTIONS,
+} from '@/constants'
+import type { UserInput } from '@/types'
 
 const validBusinessTypes: readonly string[] = BUSINESS_TYPES
 const validRegions: readonly string[] = REGIONS
 const validEmployeeCounts: number[] = EMPLOYEE_OPTIONS.map((o) => o.value)
 const validRevenues: number[] = REVENUE_OPTIONS.map((o) => o.value)
+const validBusinessAges: number[] = BUSINESS_AGE_OPTIONS.map((o) => o.value)
+const validFounderAges: number[] = FOUNDER_AGE_OPTIONS.map((o) => o.value)
+const validAgeGroups: string[] = AGE_GROUP_OPTIONS.map((o) => o.value)
+const validGenders: string[] = GENDER_OPTIONS.map((o) => o.value)
+const validHouseholdTypes: string[] = HOUSEHOLD_TYPE_OPTIONS.map((o) => o.value)
+const validIncomeLevels: string[] = INCOME_LEVEL_OPTIONS.map((o) => o.value)
+const validEmploymentStatuses: string[] = EMPLOYMENT_STATUS_OPTIONS.map((o) => o.value)
+const validInterestCategories: string[] = INTEREST_CATEGORY_OPTIONS.map((o) => o.value)
+
+function badRequest(error: string) {
+  return NextResponse.json({ success: false, error }, { status: 400 })
+}
+
+function validateBusinessInput(body: Record<string, unknown>): UserInput | string {
+  const { businessType, region, employeeCount, annualRevenue, businessAge, founderAge } = body
+
+  if (!businessType || !region || !employeeCount || !annualRevenue || businessAge === undefined || businessAge === null || founderAge === undefined || founderAge === null) {
+    return '필수 항목을 모두 입력해주세요.'
+  }
+  if (!validBusinessTypes.includes(businessType as string)) return '유효하지 않은 업종입니다.'
+  if (!validRegions.includes(region as string)) return '유효하지 않은 지역입니다.'
+
+  const parsedEmployee = Number(employeeCount)
+  if (isNaN(parsedEmployee) || !validEmployeeCounts.includes(parsedEmployee)) return '유효하지 않은 직원 수입니다.'
+  const parsedRevenue = Number(annualRevenue)
+  if (isNaN(parsedRevenue) || !validRevenues.includes(parsedRevenue)) return '유효하지 않은 연 매출입니다.'
+  const parsedBizAge = Number(businessAge)
+  if (isNaN(parsedBizAge) || !validBusinessAges.includes(parsedBizAge)) return '유효하지 않은 업력입니다.'
+  const parsedFounderAge = Number(founderAge)
+  if (isNaN(parsedFounderAge) || !validFounderAges.includes(parsedFounderAge)) return '유효하지 않은 대표자 연령입니다.'
+
+  return {
+    userType: 'business',
+    businessType: businessType as string,
+    region: region as string,
+    employeeCount: parsedEmployee,
+    annualRevenue: parsedRevenue,
+    businessAge: parsedBizAge,
+    founderAge: parsedFounderAge,
+  }
+}
+
+function validatePersonalInput(body: Record<string, unknown>): UserInput | string {
+  const { ageGroup, gender, region, householdType, incomeLevel, employmentStatus, interestCategories } = body
+
+  if (!ageGroup || !gender || !region || !householdType || !incomeLevel || !employmentStatus) {
+    return '필수 항목을 모두 입력해주세요.'
+  }
+  if (!validAgeGroups.includes(ageGroup as string)) return '유효하지 않은 연령대입니다.'
+  if (!validGenders.includes(gender as string)) return '유효하지 않은 성별입니다.'
+  if (!validRegions.includes(region as string)) return '유효하지 않은 지역입니다.'
+  if (!validHouseholdTypes.includes(householdType as string)) return '유효하지 않은 가구 유형입니다.'
+  if (!validIncomeLevels.includes(incomeLevel as string)) return '유효하지 않은 소득 수준입니다.'
+  if (!validEmploymentStatuses.includes(employmentStatus as string)) return '유효하지 않은 취업 상태입니다.'
+
+  const categories = Array.isArray(interestCategories) ? interestCategories as string[] : []
+  if (categories.some(c => !validInterestCategories.includes(c))) return '유효하지 않은 관심 분야입니다.'
+
+  return {
+    userType: 'personal',
+    ageGroup: ageGroup as string,
+    gender: gender as string,
+    region: region as string,
+    householdType: householdType as string,
+    incomeLevel: incomeLevel as string,
+    employmentStatus: employmentStatus as string,
+    interestCategories: categories,
+  }
+}
 
 /**
- * 진단 생성 API
+ * 진단 생성 API (듀얼 트랙: 개인/사업자)
  * POST /api/diagnose
- *
- * 사업 정보를 입력받아 매칭되는 지원금을 찾고 진단 결과를 저장
  */
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let body: any
+    let body: Record<string, unknown>
     try {
       body = await request.json()
     } catch {
-      return NextResponse.json(
-        { success: false, error: '잘못된 JSON 형식입니다.' },
-        { status: 400 }
-      )
-    }
-    const { businessType, region, employeeCount, annualRevenue, businessStartDate } = body
-
-    // 필수값 존재 검증
-    if (!businessType || !region || !employeeCount || !annualRevenue || !businessStartDate) {
-      return NextResponse.json(
-        { success: false, error: '필수 항목을 모두 입력해주세요.' },
-        { status: 400 }
-      )
+      return badRequest('잘못된 JSON 형식입니다.')
     }
 
-    // 업종 검증
-    if (!validBusinessTypes.includes(businessType)) {
-      return NextResponse.json(
-        { success: false, error: '유효하지 않은 업종입니다.' },
-        { status: 400 }
-      )
+    const userType = body.userType as string | undefined
+    if (userType !== 'personal' && userType !== 'business') {
+      return badRequest('userType은 "personal" 또는 "business"여야 합니다.')
     }
 
-    // 지역 검증
-    if (!validRegions.includes(region)) {
-      return NextResponse.json(
-        { success: false, error: '유효하지 않은 지역입니다.' },
-        { status: 400 }
-      )
+    // 트랙별 검증
+    const validationResult = userType === 'personal'
+      ? validatePersonalInput(body)
+      : validateBusinessInput(body)
+
+    if (typeof validationResult === 'string') {
+      return badRequest(validationResult)
     }
 
-    const parsedEmployeeCount = Number(employeeCount)
-    const parsedRevenue = Number(annualRevenue)
-
-    // 직원 수 검증
-    if (isNaN(parsedEmployeeCount) || !validEmployeeCounts.includes(parsedEmployeeCount)) {
-      return NextResponse.json(
-        { success: false, error: '유효하지 않은 직원 수입니다.' },
-        { status: 400 }
-      )
-    }
-
-    // 매출 검증
-    if (isNaN(parsedRevenue) || !validRevenues.includes(parsedRevenue)) {
-      return NextResponse.json(
-        { success: false, error: '유효하지 않은 연 매출입니다.' },
-        { status: 400 }
-      )
-    }
-
-    // 창업일 검증
-    const startDate = new Date(businessStartDate)
-    if (isNaN(startDate.getTime())) {
-      return NextResponse.json(
-        { success: false, error: '유효하지 않은 창업일입니다.' },
-        { status: 400 }
-      )
-    }
-    if (startDate > new Date()) {
-      return NextResponse.json(
-        { success: false, error: '창업일은 미래 날짜일 수 없습니다.' },
-        { status: 400 }
-      )
-    }
+    const userInput = validationResult
 
     // 활성화된 지원금 조회
     const supports = await getActiveSupports()
 
-    // 매칭 실행
-    const formData = {
-      businessType,
-      region,
-      employeeCount: parsedEmployeeCount,
-      annualRevenue: parsedRevenue,
-      businessStartDate,
-    }
-    const matchResult = matchSupportsV2(supports, formData)
+    // 매칭 실행 (v4: dual-track)
+    const { result, matchedScores, matchedSupports } = matchSupportsV4Flat(supports, userInput)
 
     // 진단 결과 저장
-    const matchedSupports = matchResult.all.map((s) => s.support)
-    const diagnosisId = await saveDiagnosis(formData, matchedSupports)
+    const diagnosisId = await saveDiagnosis(userInput, matchedSupports, matchedScores)
 
     const duration = Date.now() - startTime
 
@@ -111,23 +127,22 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         diagnosisId,
-        matchedCount: matchResult.totalCount,
+        matchedCount: result.totalCount,
         supports: matchedSupports,
-        scored: matchResult.all.map((s) => ({
-          supportId: s.support.id,
-          score: Math.round(s.score * 100) / 100,
-          tier: s.tier,
-          breakdown: s.breakdown,
-        })),
+        scored: matchedScores,
         tiers: {
-          exact: matchResult.exact.length,
-          likely: matchResult.likely.length,
-          related: matchResult.related.length,
+          tailored: result.tailored.length,
+          recommended: result.recommended.length,
+          exploratory: result.exploratory.length,
         },
       },
       metadata: {
         duration_ms: duration,
         timestamp: new Date().toISOString(),
+        totalAnalyzed: result.totalAnalyzed,
+        knockedOut: result.knockedOut,
+        filteredByServiceType: result.filteredByServiceType,
+        userType,
       },
     })
   } catch (error) {

@@ -1,284 +1,45 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Combobox } from '@/components/ui/combobox'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Loader2, Store, MapPin, Users, Banknote, Calendar, Search } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { BUSINESS_TYPES, REGIONS, EMPLOYEE_OPTIONS, REVENUE_OPTIONS } from '@/constants'
-import type { DiagnoseFormData } from '@/types'
-import FormProgress from '@/components/form-progress'
+import { UserTypeSelector } from '@/components/user-type-selector'
+import { PersonalForm } from '@/components/personal-form'
+import { BusinessForm } from '@/components/business-form'
+import type { UserType, UserInput } from '@/types'
 
 interface DiagnoseFormProps {
-  onSubmit: (data: DiagnoseFormData) => Promise<void>
+  onSubmit: (data: UserInput) => Promise<void>
   isLoading: boolean
+  initialUserType?: UserType
 }
 
 /**
- * 사업 진단 폼 컴포넌트
+ * 듀얼 트랙 진단 폼
  *
- * 사업 정보 5개 필수 입력 + 이메일(선택)
- * 30초 내 입력 완료를 목표로 모든 필드가 선택형
+ * 개인: 7개 필드 (연령대/성별/지역/가구유형/소득수준/취업상태/관심분야)
+ * 사업자: 6개 필드 (업종/지역/직원수/매출/업력/대표자연령)
  */
-export default function DiagnoseForm({ onSubmit, isLoading }: DiagnoseFormProps) {
-  const [formData, setFormData] = useState({
-    businessType: '',
-    region: '',
-    employeeCount: '',
-    annualRevenue: '',
-    businessStartDate: '',
-  })
-  const [errors, setErrors] = useState<Record<string, string>>({})
+export default function DiagnoseForm({ onSubmit, isLoading, initialUserType }: DiagnoseFormProps) {
+  const [userType, setUserType] = useState<UserType | null>(initialUserType ?? null)
 
-  const filledCount = [
-    formData.businessType,
-    formData.region,
-    formData.employeeCount,
-    formData.annualRevenue,
-    formData.businessStartDate,
-  ].filter(Boolean).length
-
-  function validateField(fieldName: string) {
-    setFormData(prev => {
-      setErrors(prevErrors => {
-        const newErrors = { ...prevErrors }
-        switch (fieldName) {
-          case 'businessType':
-            if (!prev.businessType) newErrors.businessType = '업종을 선택해주세요.'
-            else delete newErrors.businessType
-            break
-          case 'region':
-            if (!prev.region) newErrors.region = '지역을 선택해주세요.'
-            else delete newErrors.region
-            break
-          case 'employeeCount':
-            if (!prev.employeeCount) newErrors.employeeCount = '직원 수를 선택해주세요.'
-            else delete newErrors.employeeCount
-            break
-          case 'annualRevenue':
-            if (!prev.annualRevenue) newErrors.annualRevenue = '연 매출을 선택해주세요.'
-            else delete newErrors.annualRevenue
-            break
-          case 'businessStartDate':
-            if (!prev.businessStartDate) {
-              newErrors.businessStartDate = '창업일을 입력해주세요.'
-            } else {
-              const startDate = new Date(prev.businessStartDate)
-              if (startDate > new Date()) {
-                newErrors.businessStartDate = '창업일은 미래 날짜일 수 없습니다.'
-              } else {
-                delete newErrors.businessStartDate
-              }
-            }
-            break
-        }
-        return newErrors
-      })
-      return prev
-    })
+  if (!userType) {
+    return <UserTypeSelector onSelect={setUserType} />
   }
 
-  function validate(): Record<string, string> {
-    const newErrors: Record<string, string> = {}
-
-    if (!formData.businessType) newErrors.businessType = '업종을 선택해주세요.'
-    if (!formData.region) newErrors.region = '지역을 선택해주세요.'
-    if (!formData.employeeCount) newErrors.employeeCount = '직원 수를 선택해주세요.'
-    if (!formData.annualRevenue) newErrors.annualRevenue = '연 매출을 선택해주세요.'
-    if (!formData.businessStartDate) {
-      newErrors.businessStartDate = '창업일을 입력해주세요.'
-    } else {
-      const startDate = new Date(formData.businessStartDate)
-      if (startDate > new Date()) {
-        newErrors.businessStartDate = '창업일은 미래 날짜일 수 없습니다.'
-      }
-    }
-
-    setErrors(newErrors)
-    return newErrors
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    const validationErrors = validate()
-    if (Object.keys(validationErrors).length > 0) {
-      const firstErrorField = Object.keys(validationErrors)[0]
-      const element = document.getElementById(firstErrorField)
-      element?.focus()
-      return
-    }
-
-    await onSubmit({
-      businessType: formData.businessType,
-      region: formData.region,
-      employeeCount: Number(formData.employeeCount),
-      annualRevenue: Number(formData.annualRevenue),
-      businessStartDate: formData.businessStartDate,
-    })
+  if (userType === 'personal') {
+    return (
+      <PersonalForm
+        onSubmit={onSubmit}
+        isLoading={isLoading}
+        onBack={() => setUserType(null)}
+      />
+    )
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6" aria-label="사업 진단 폼">
-      <FormProgress filledCount={filledCount} totalCount={5} />
-
-      <div className="space-y-2">
-        <Label htmlFor="businessType" className="flex items-center gap-2 text-sm font-bold">
-          <Store className="h-4 w-4" aria-hidden="true" />
-          업종
-        </Label>
-        <Combobox
-          id="businessType"
-          options={[...BUSINESS_TYPES]}
-          value={formData.businessType}
-          onValueChange={(val) => setFormData(prev => ({ ...prev, businessType: val }))}
-          placeholder="업종을 선택해주세요"
-          aria-label="업종 선택"
-          aria-invalid={!!errors.businessType}
-          aria-describedby={errors.businessType ? 'businessType-error' : undefined}
-          onBlur={() => validateField('businessType')}
-        />
-        {errors.businessType && (
-          <p id="businessType-error" className="text-xs text-destructive" role="alert">
-            {errors.businessType}
-          </p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="region" className="flex items-center gap-2 text-sm font-bold">
-          <MapPin className="h-4 w-4" aria-hidden="true" />
-          지역
-        </Label>
-        <Combobox
-          id="region"
-          options={[...REGIONS]}
-          value={formData.region}
-          onValueChange={(val) => setFormData(prev => ({ ...prev, region: val }))}
-          placeholder="지역을 선택해주세요"
-          aria-label="지역 선택"
-          aria-invalid={!!errors.region}
-          aria-describedby={errors.region ? 'region-error' : undefined}
-          onBlur={() => validateField('region')}
-        />
-        {errors.region && (
-          <p id="region-error" className="text-xs text-destructive" role="alert">
-            {errors.region}
-          </p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label className="flex items-center gap-2 text-sm font-bold">
-          <Users className="h-4 w-4" aria-hidden="true" />
-          직원 수
-        </Label>
-        <RadioGroup
-          aria-label="직원 수 선택"
-          value={formData.employeeCount}
-          onValueChange={(val) => setFormData(prev => ({ ...prev, employeeCount: val }))}
-          className="grid grid-cols-2 gap-3 sm:grid-cols-4"
-        >
-          {EMPLOYEE_OPTIONS.map(opt => (
-            <label
-              key={opt.value}
-              className={cn(
-                "flex cursor-pointer items-center justify-center rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2",
-                formData.employeeCount === String(opt.value)
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-input"
-              )}
-            >
-              <RadioGroupItem value={String(opt.value)} className="sr-only" />
-              {opt.label}
-            </label>
-          ))}
-        </RadioGroup>
-        {errors.employeeCount && (
-          <p className="text-xs text-destructive" role="alert">
-            {errors.employeeCount}
-          </p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label className="flex items-center gap-2 text-sm font-bold">
-          <Banknote className="h-4 w-4" aria-hidden="true" />
-          연 매출
-        </Label>
-        <RadioGroup
-          aria-label="연 매출 선택"
-          value={formData.annualRevenue}
-          onValueChange={(val) => setFormData(prev => ({ ...prev, annualRevenue: val }))}
-          className="grid grid-cols-2 gap-3 sm:grid-cols-3"
-        >
-          {REVENUE_OPTIONS.map(opt => (
-            <label
-              key={opt.value}
-              className={cn(
-                "flex cursor-pointer items-center justify-center rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2",
-                formData.annualRevenue === String(opt.value)
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-input"
-              )}
-            >
-              <RadioGroupItem value={String(opt.value)} className="sr-only" />
-              {opt.label}
-            </label>
-          ))}
-        </RadioGroup>
-        {errors.annualRevenue && (
-          <p className="text-xs text-destructive" role="alert">
-            {errors.annualRevenue}
-          </p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="businessStartDate" className="flex items-center gap-2 text-sm font-bold">
-          <Calendar className="h-4 w-4" aria-hidden="true" />
-          창업일
-        </Label>
-        <Input
-          id="businessStartDate"
-          type="date"
-          className="h-12 rounded-xl bg-muted"
-          value={formData.businessStartDate}
-          onChange={(e) => setFormData(prev => ({ ...prev, businessStartDate: e.target.value }))}
-          onBlur={() => validateField('businessStartDate')}
-          max={new Date().toISOString().split('T')[0]}
-          aria-label="창업일 선택"
-          aria-required="true"
-          aria-invalid={!!errors.businessStartDate}
-          aria-describedby={errors.businessStartDate ? 'businessStartDate-error' : undefined}
-        />
-        {errors.businessStartDate && (
-          <p id="businessStartDate-error" className="text-xs text-destructive" role="alert">
-            {errors.businessStartDate}
-          </p>
-        )}
-      </div>
-
-      <Button
-        type="submit"
-        disabled={isLoading}
-        aria-label={isLoading ? '분석 진행 중' : '내 지원금 찾기'}
-        className="h-14 w-full rounded-xl bg-gradient-to-r from-primary to-emerald-600 text-base font-bold text-white shadow-lg shadow-primary/30 transition-all hover:-translate-y-0.5"
-      >
-        {isLoading ? (
-          <>
-            <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-            분석 중...
-          </>
-        ) : (
-          <>
-            <Search className="h-5 w-5" aria-hidden="true" />
-            내 지원금 찾기
-          </>
-        )}
-      </Button>
-    </form>
+    <BusinessForm
+      onSubmit={onSubmit}
+      isLoading={isLoading}
+      onBack={initialUserType ? undefined : () => setUserType(null)}
+    />
   )
 }

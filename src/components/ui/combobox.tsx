@@ -29,6 +29,7 @@ export function Combobox({
   onBlur,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
+  const listboxId = id ? `${id}-listbox` : 'combobox-listbox'
 
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
@@ -38,6 +39,7 @@ export function Combobox({
           id={id}
           role="combobox"
           aria-expanded={open}
+          aria-controls={listboxId}
           aria-label={ariaLabel}
           aria-invalid={ariaInvalid}
           aria-describedby={ariaDescribedby}
@@ -61,7 +63,7 @@ export function Combobox({
           align="start"
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
-          <div className="max-h-[240px] overflow-y-auto p-1" role="listbox" aria-label={ariaLabel}>
+          <div className="max-h-[240px] overflow-y-auto p-1" role="listbox" id={listboxId} aria-label={ariaLabel}>
             {options.map((option) => (
               <button
                 key={option}

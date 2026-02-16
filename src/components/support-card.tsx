@@ -3,20 +3,39 @@ import { Clock, CalendarDays, ArrowRight } from 'lucide-react'
 import { CATEGORY_COLORS } from '@/constants'
 import type { Support } from '@/types'
 
+interface MatchScore {
+  score: number
+  tier: string
+  confidence?: number
+}
+
 interface SupportCardProps {
   support: Support
+  matchScore?: MatchScore
+}
+
+const TIER_PROGRESS_COLORS: Record<string, string> = {
+  tailored: 'bg-gradient-to-r from-emerald-400 to-emerald-600',
+  recommended: 'bg-gradient-to-r from-blue-400 to-blue-600',
+  exploratory: 'bg-gradient-to-r from-gray-300 to-gray-500',
+}
+
+function getConfidenceLabel(confidence?: number): { label: string; className: string } | null {
+  if (confidence == null) return null
+  if (confidence >= 70) return { label: '높은 신뢰도', className: 'text-emerald-600 dark:text-emerald-400' }
+  if (confidence >= 40) return { label: '보통 신뢰도', className: 'text-amber-600 dark:text-amber-400' }
+  return { label: '낮은 신뢰도', className: 'text-gray-500 dark:text-gray-400' }
 }
 
 /**
  * 지원금 카드 컴포넌트
  *
  * 개별 지원금 정보를 카드 형태로 표시
- * 분야 뱃지, 제목, 기관명, 마감일, 지원 금액 표시
+ * 분야 뱃지, 제목, 기관명, 마감일, 매칭 점수, 지원 금액 표시
  */
-export default function SupportCard({ support }: SupportCardProps) {
+export default function SupportCard({ support, matchScore }: SupportCardProps) {
   const categoryColor = CATEGORY_COLORS[support.category] || CATEGORY_COLORS['기타']
 
-  /** 마감일을 D-day 형식으로 변환 */
   function formatDeadline(endDate: string | null): string {
     if (!endDate) return '상시'
 
@@ -34,80 +53,83 @@ export default function SupportCard({ support }: SupportCardProps) {
   const isUrgent = deadline === 'D-Day' || (deadline !== '상시' && deadline !== '마감' && !isNaN(parseInt(deadline.replace('D-', ''))) && parseInt(deadline.replace('D-', '')) <= 7)
   const isAlwaysOpen = deadline === '상시'
 
+  const progressColor = matchScore
+    ? (TIER_PROGRESS_COLORS[matchScore.tier] ?? TIER_PROGRESS_COLORS['exploratory'])
+    : ''
+  const confidenceInfo = matchScore ? getConfidenceLabel(matchScore.confidence) : null
+
   return (
-    <div className="group rounded-2xl border border-border bg-card p-6 shadow-sm transition-all duration-200 hover:border-primary/40 hover:shadow-md">
+    <div className="group rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-200 hover:border-primary/40 hover:shadow-md">
       {/* Top Row: Category and Deadline */}
       <div className="mb-3 flex items-center justify-between">
         <Badge variant="outline" className={`${categoryColor.bg} ${categoryColor.text} border-0`}>
           {support.category}
         </Badge>
         <div
-          className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold ${
+          className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${
             isUrgent
-              ? 'bg-red-50 text-red-600'
+              ? 'bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400'
               : isAlwaysOpen
-                ? 'bg-emerald-50 text-emerald-600'
+                ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400'
                 : 'bg-muted text-muted-foreground'
           }`}
         >
           {isUrgent ? (
-            <Clock className="h-3 w-3" />
+            <Clock className="h-3 w-3" aria-hidden="true" />
           ) : (
-            <CalendarDays className="h-3 w-3" />
+            <CalendarDays className="h-3 w-3" aria-hidden="true" />
           )}
           <span>{deadline}</span>
         </div>
       </div>
 
       {/* Title */}
-      <h3 className="text-xl font-bold leading-tight text-foreground group-hover:text-primary">
+      <h3 className="line-clamp-2 text-lg font-bold leading-snug text-foreground group-hover:text-primary">
         {support.title}
       </h3>
 
       {/* Organization */}
-      <p className="mt-1 text-sm text-muted-foreground">{support.organization}</p>
+      <p className="mt-1 text-base text-muted-foreground">{support.organization}</p>
 
-      {/* Confidence Badge */}
-      {support.extractionConfidence && (
-        <div className="mt-2 flex items-center gap-1">
-          {(() => {
-            const values = Object.values(support.extractionConfidence)
-            const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0
-            const level = avg >= 0.7 ? 'high' : avg >= 0.4 ? 'medium' : 'low'
-            const config = {
-              high: { label: '높은 신뢰도', bg: 'bg-emerald-100 dark:bg-emerald-900/40', text: 'text-emerald-700 dark:text-emerald-300' },
-              medium: { label: '보통 신뢰도', bg: 'bg-amber-100 dark:bg-amber-900/40', text: 'text-amber-700 dark:text-amber-300' },
-              low: { label: '낮은 신뢰도', bg: 'bg-gray-100 dark:bg-gray-800/40', text: 'text-gray-600 dark:text-gray-400' },
-            }[level]
-            return (
-              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${config.bg} ${config.text}`}>
-                {config.label}
-              </span>
-            )
-          })()}
+      {/* Match Score - compact progress bar */}
+      {matchScore && (
+        <div className="mt-4 flex items-center gap-3">
+          <span className="shrink-0 text-sm font-semibold text-foreground">
+            매칭 {matchScore.score}%
+          </span>
+          <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${progressColor}`}
+              style={{ width: `${matchScore.score}%` }}
+            />
+          </div>
+          {confidenceInfo && (
+            <span className={`shrink-0 text-xs font-medium ${confidenceInfo.className}`}>
+              {confidenceInfo.label}
+            </span>
+          )}
         </div>
       )}
 
       {/* Amount */}
       {support.amount && (
-        <div className="mt-4 rounded-lg bg-muted p-3">
-          <p className="text-xs text-muted-foreground">지원 혜택</p>
-          <p className="mt-1 text-xl font-bold text-primary">{support.amount}</p>
+        <div className="mt-3 rounded-lg bg-muted/60 px-3 py-2">
+          <p className="text-sm font-semibold text-primary">{support.amount}</p>
         </div>
       )}
 
       {/* Footer */}
       {support.detailUrl && (
-        <div className="mt-6 flex justify-end border-t border-border pt-4">
+        <div className="mt-4 flex justify-end">
           <a
             href={support.detailUrl}
             target="_blank"
             rel="noopener noreferrer"
             aria-label={`${support.title} 자세히 보기`}
-            className="inline-flex items-center gap-1.5 text-sm font-bold text-primary transition-all hover:gap-2.5"
+            className="inline-flex items-center gap-1 text-sm font-medium text-primary transition-all hover:gap-2"
           >
             자세히 보기
-            <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
           </a>
         </div>
       )}

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
 export default function ResultError({
-  error,
+  error: _error,
   reset,
 }: {
   error: Error & { digest?: string }

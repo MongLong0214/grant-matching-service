@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { extractEligibility } from '@/lib/extraction'
 
-const KSTARTUP_API_URL = 'https://apis.data.go.kr/B552735/k-startup/getAnnouncementList'
+const KSTARTUP_API_URL = 'https://apis.data.go.kr/B552735/kisedKstartupService01/getAnnouncementInformation01'
 
 interface KStartupItem {
   pblancId: string          // 공고ID (external_id)
@@ -48,18 +48,29 @@ export async function fetchKStartup(apiKey: string): Promise<{
   const items: KStartupItem[] = []
   let totalCount = 0
   let apiCallsUsed = 0
-  let pageNo = 1
-  const numOfRows = 100
+  let page = 1
+  const perPage = 100
 
   while (true) {
     const url = new URL(KSTARTUP_API_URL)
     url.searchParams.set('serviceKey', apiKey)
-    url.searchParams.set('pageNo', String(pageNo))
-    url.searchParams.set('numOfRows', String(numOfRows))
-    url.searchParams.set('type', 'json')
+    url.searchParams.set('page', String(page))
+    url.searchParams.set('perPage', String(perPage))
+    url.searchParams.set('returnType', 'json')
 
-    const res = await fetch(url.toString())
+    let res: Response
+    try {
+      res = await fetch(url.toString())
+    } catch (err) {
+      console.log(`[K-Startup] Network error: ${err instanceof Error ? err.message : 'Unknown'}`)
+      break
+    }
     apiCallsUsed++
+
+    if (res.status === 403) {
+      console.log('[K-Startup] API returned 403 - 활용신청 필요')
+      return { items: [], totalCount: 0, apiCallsUsed }
+    }
 
     if (!res.ok) {
       throw new Error(`K-Startup API error: ${res.status} ${res.statusText}`)
@@ -76,10 +87,10 @@ export async function fetchKStartup(apiKey: string): Promise<{
     items.push(...itemList)
 
     if (items.length >= totalCount) break
-    pageNo++
+    page++
 
     // Safety: max 50 pages (5000 items)
-    if (pageNo > 50) break
+    if (page > 50) break
   }
 
   return { items, totalCount, apiCallsUsed }
@@ -108,7 +119,7 @@ export async function syncKStartup(): Promise<{
   const logId = syncLog?.id
 
   try {
-    const { items, totalCount, apiCallsUsed } = await fetchKStartup(apiKey)
+    const { items, apiCallsUsed } = await fetchKStartup(apiKey)
 
     let inserted = 0
     let updated = 0
@@ -134,14 +145,16 @@ export async function syncKStartup(): Promise<{
         start_date: null as string | null,
         end_date: parseDate(item.pblancEndDt),
         detail_url: item.detailUrl || `https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=${item.pblancId}`,
-        target_regions: extraction.regions.length > 0 ? extraction.regions : null,
-        target_business_types: extraction.businessTypes.length > 0 ? extraction.businessTypes : null,
+        target_regions: extraction.regions,
+        target_business_types: extraction.businessTypes,
         target_employee_min: extraction.employeeMin,
         target_employee_max: extraction.employeeMax,
         target_revenue_min: extraction.revenueMin,
         target_revenue_max: extraction.revenueMax,
         target_business_age_min: extraction.businessAgeMinMonths,
         target_business_age_max: extraction.businessAgeMaxMonths,
+        target_founder_age_min: extraction.founderAgeMin,
+        target_founder_age_max: extraction.founderAgeMax,
         amount: null as string | null,
         is_active: true,
         source: 'kstartup',

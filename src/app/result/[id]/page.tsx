@@ -1,9 +1,16 @@
 import Link from 'next/link'
 import { getDiagnosis, getSupportsByIds } from '@/lib/data'
-import { matchSupportsV2 } from '@/lib/matching-v2'
 import SupportList from '@/components/support-list'
 import { Button } from '@/components/ui/button'
-import { CheckCircle, Pencil, RotateCcw } from 'lucide-react'
+import { Pencil, RotateCcw } from 'lucide-react'
+import { BUSINESS_AGE_OPTIONS } from '@/constants'
+import { normalizeTier } from '@/lib/normalize-tier'
+import type { UserType } from '@/types'
+
+function getBusinessAgeLabel(value: number): string {
+  const opt = BUSINESS_AGE_OPTIONS.find(o => o.value === value)
+  return opt?.label ?? '미상'
+}
 
 interface ResultPageProps {
   params: Promise<{ id: string }>
@@ -49,37 +56,72 @@ export default async function ResultPage({ params }: ResultPageProps) {
     )
   }
 
+  const userType: UserType = diagnosis.userType ?? 'business'
   const supports = await getSupportsByIds(diagnosis.matchedSupportIds)
 
-  // Re-run matching to get scored data with tier assignments
-  const matchResult = matchSupportsV2(supports, {
-    businessType: diagnosis.businessType,
-    region: diagnosis.region,
-    employeeCount: diagnosis.employeeCount,
-    annualRevenue: diagnosis.annualRevenue,
-    businessStartDate: diagnosis.businessStartDate,
-  })
+  // 저장된 매칭 점수 사용 (re-matching 제거)
+  const scores = diagnosis.matchedScores ?? []
+  const scoredSupports = scores.map((s) => {
+    const support = supports.find((sup) => sup.id === s.supportId)
+    if (!support) return null
+
+    const raw = s.scores ?? s.breakdown
+    let breakdown: Record<string, number> | undefined
+
+    if (raw) {
+      if (userType === 'personal') {
+        breakdown = {
+          region: Math.round((raw.region ?? 0) * 100),
+          age: Math.round((raw.age ?? 0) * 100),
+          householdType: Math.round((raw.householdType ?? 0) * 100),
+          incomeLevel: Math.round((raw.incomeLevel ?? 0) * 100),
+          employmentStatus: Math.round((raw.employmentStatus ?? 0) * 100),
+        }
+      } else {
+        breakdown = {
+          region: Math.round((raw.region ?? 0) * 100),
+          businessType: Math.round((raw.businessType ?? 0) * 100),
+          employee: Math.round((raw.employee ?? 0) * 100),
+          revenue: Math.round((raw.revenue ?? 0) * 100),
+          businessAge: Math.round((raw.businessAge ?? 0) * 100),
+          founderAge: Math.round((raw.founderAge ?? 0) * 100),
+        }
+      }
+    }
+
+    const confidence = s.scores
+      ? Math.round(s.scores.confidence * 100)
+      : undefined
+
+    return { support, score: s.score, tier: s.tier, breakdown, confidence }
+  }).filter((s): s is NonNullable<typeof s> => s !== null)
+
+  const tailoredCount = scores.filter((s) => normalizeTier(s.tier) === 'tailored').length
+  const recommendedCount = scores.filter((s) => normalizeTier(s.tier) === 'recommended').length
+  const exploratoryCount = scores.filter((s) => normalizeTier(s.tier) === 'exploratory').length
 
   return (
     <div className="mx-auto max-w-[960px] px-4 py-10">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-foreground">맞춤 지원금 결과</h1>
+        <h1 className="text-3xl font-bold text-foreground">
+          {userType === 'personal' ? '맞춤 혜택 결과' : '맞춤 지원금 결과'}
+        </h1>
         {supports.length > 0 && (
           <div className="flex items-center gap-2">
-            {matchResult.exact.length > 0 && (
-              <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
-                맞춤 {matchResult.exact.length}
+            {tailoredCount > 0 && (
+              <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-900 dark:text-emerald-200">
+                맞춤 {tailoredCount}
               </span>
             )}
-            {matchResult.likely.length > 0 && (
-              <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
-                추천 {matchResult.likely.length}
+            {recommendedCount > 0 && (
+              <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900 dark:text-blue-200">
+                추천 {recommendedCount}
               </span>
             )}
-            {matchResult.related.length > 0 && (
-              <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-700">
-                관련 {matchResult.related.length}
+            {exploratoryCount > 0 && (
+              <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                탐색 {exploratoryCount}
               </span>
             )}
           </div>
@@ -87,14 +129,17 @@ export default async function ResultPage({ params }: ResultPageProps) {
       </div>
 
       {/* Summary Card */}
-      <div className="mb-10 rounded-xl border bg-white p-6 shadow-sm">
-        <p className="mb-2 text-sm text-gray-500">현재 적용된 검색 조건</p>
+      <div className="mb-10 rounded-xl border bg-card p-6 shadow-sm">
+        <p className="mb-2 text-sm text-muted-foreground">현재 적용된 검색 조건</p>
         <div className="flex items-center justify-between">
           <p className="font-bold text-foreground">
-            {diagnosis.businessType} · {diagnosis.region} · 직원 {diagnosis.employeeCount}명
+            {userType === 'personal'
+              ? `${diagnosis.ageGroup ?? ''} · ${diagnosis.region} · ${diagnosis.householdType ?? ''} · ${diagnosis.incomeLevel ?? ''}`
+              : `${diagnosis.businessType} · ${diagnosis.region} · 직원 ${diagnosis.employeeCount}명 · 업력 ${getBusinessAgeLabel(diagnosis.businessAge ?? 0)}`
+            }
           </p>
           <Link
-            href="/diagnose"
+            href={`/diagnose?type=${userType}`}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
           >
             <Pencil className="h-4 w-4" />
@@ -106,11 +151,8 @@ export default async function ResultPage({ params }: ResultPageProps) {
       {/* Support List */}
       <SupportList
         supports={supports}
-        scoredSupports={matchResult.all.map(s => ({
-          support: s.support,
-          score: s.score,
-          tier: s.tier,
-        }))}
+        scoredSupports={scoredSupports}
+        userType={userType}
       />
 
       {/* Bottom Actions */}

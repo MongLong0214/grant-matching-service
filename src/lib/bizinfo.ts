@@ -5,6 +5,7 @@
 
 import type { SupportCategory } from "@/types"
 import type { Database } from "@/lib/supabase/types"
+import { extractEligibility } from "@/lib/extraction"
 
 type SupportInsert = Database["public"]["Tables"]["supports"]["Insert"]
 
@@ -149,6 +150,7 @@ export async function fetchAllPrograms(apiKey: string): Promise<BizinfoProgram[]
 
 /**
  * Bizinfo 프로그램을 Supabase Insert 형식으로 변환
+ * 사업명/소관기관/분야에서 자격 조건을 추출하여 매칭 정확도 향상
  */
 export function mapToSupport(program: BizinfoProgram): SupportInsert {
   // 분야 매핑 (매핑되지 않으면 "기타"로 처리)
@@ -158,6 +160,13 @@ export function mapToSupport(program: BizinfoProgram): SupportInsert {
   const startDate = program.신청시작일자?.trim() || null
   const endDate = program.신청종료일자?.trim() || null
 
+  // 사업명/소관기관/분야에서 자격 조건 추출
+  const extraction = extractEligibility([
+    program.사업명,
+    program.소관기관,
+    program.분야,
+  ])
+
   return {
     title: program.사업명,
     organization: program.소관기관,
@@ -165,17 +174,19 @@ export function mapToSupport(program: BizinfoProgram): SupportInsert {
     start_date: startDate,
     end_date: endDate,
     detail_url: program.상세URL,
-    // API에서 제공하지 않는 필드들은 null
-    target_regions: null,
-    target_business_types: null,
-    target_employee_min: null,
-    target_employee_max: null,
-    target_revenue_min: null,
-    target_revenue_max: null,
-    target_business_age_min: null,
-    target_business_age_max: null,
+    target_regions: extraction.regions,
+    target_business_types: extraction.businessTypes,
+    target_employee_min: extraction.employeeMin,
+    target_employee_max: extraction.employeeMax,
+    target_revenue_min: extraction.revenueMin,
+    target_revenue_max: extraction.revenueMax,
+    target_business_age_min: extraction.businessAgeMinMonths,
+    target_business_age_max: extraction.businessAgeMaxMonths,
+    target_founder_age_min: extraction.founderAgeMin,
+    target_founder_age_max: extraction.founderAgeMax,
     amount: null,
     is_active: true,
     source: "bizinfo",
+    extraction_confidence: { ...extraction.confidence },
   }
 }

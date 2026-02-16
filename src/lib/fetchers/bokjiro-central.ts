@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { extractEligibility } from '@/lib/extraction'
 
-const BOKJIRO_CENTRAL_URL = 'https://apis.data.go.kr/B554287/LocalGovernmentWelfareInformations/LcgvWelfareList'
+// 보건복지부_지자체 복지정보 (lowercase 'l' at end)
+const BOKJIRO_CENTRAL_URL = 'https://apis.data.go.kr/B554287/LocalGovernmentWelfareInformations/LcgvWelfarelist'
 
 interface BokjiroCentralItem {
   servId: string
@@ -103,6 +104,10 @@ export async function syncBokjiroCentral(): Promise<{
       const res = await fetch(url.toString())
       apiCallsUsed++
 
+      if (res.status === 403) {
+        console.log('[Bokjiro-Central] API returned 403 - 활용신청 필요')
+        break
+      }
       if (!res.ok) throw new Error(`Bokjiro Central API error: ${res.status}`)
 
       const xml = await res.text()
@@ -124,7 +129,11 @@ export async function syncBokjiroCentral(): Promise<{
           item.srvPvsnNm,
         ].filter(Boolean) as string[]
 
-        const extraction = extractEligibility(eligibilityTexts)
+        const extraction = extractEligibility(eligibilityTexts, item.servNm)
+
+        // 복지로는 기본 personal, 사업자 키워드가 있으면 both
+        const hasBizKeywords = /기업|사업자|소상공인|법인|자영업/.test(item.servDgst || '')
+        const serviceType = hasBizKeywords ? 'both' : 'personal'
 
         const record = {
           title: item.servNm,
@@ -133,14 +142,16 @@ export async function syncBokjiroCentral(): Promise<{
           start_date: null as string | null,
           end_date: null as string | null,
           detail_url: `https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=${item.servId}`,
-          target_regions: extraction.regions.length > 0 ? extraction.regions : null,
-          target_business_types: extraction.businessTypes.length > 0 ? extraction.businessTypes : null,
+          target_regions: extraction.regions,
+          target_business_types: extraction.businessTypes,
           target_employee_min: extraction.employeeMin,
           target_employee_max: extraction.employeeMax,
           target_revenue_min: extraction.revenueMin,
           target_revenue_max: extraction.revenueMax,
           target_business_age_min: extraction.businessAgeMinMonths,
           target_business_age_max: extraction.businessAgeMaxMonths,
+          target_founder_age_min: extraction.founderAgeMin,
+          target_founder_age_max: extraction.founderAgeMax,
           amount: null as string | null,
           is_active: true,
           source: 'bokjiro-central',
@@ -149,6 +160,13 @@ export async function syncBokjiroCentral(): Promise<{
           raw_exclusion_text: null as string | null,
           raw_preference_text: item.trgterIndvdlNmArray || null,
           extraction_confidence: extraction.confidence,
+          service_type: serviceType,
+          target_age_min: extraction.ageMin,
+          target_age_max: extraction.ageMax,
+          target_household_types: extraction.householdTypes.length > 0 ? extraction.householdTypes : null,
+          target_income_levels: extraction.incomeLevels.length > 0 ? extraction.incomeLevels : null,
+          target_employment_status: extraction.employmentStatus.length > 0 ? extraction.employmentStatus : null,
+          benefit_categories: extraction.benefitCategories.length > 0 ? extraction.benefitCategories : null,
         }
 
         const { data: existing } = await supabase

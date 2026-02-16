@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { extractEligibility, CTPV_TO_REGION } from '@/lib/extraction'
 
-const BOKJIRO_LOCAL_URL = 'https://apis.data.go.kr/B554287/LocalGovernmentWelfareInformations/LcgvWelfareDtl'
+// 보건복지부_지자체 복지 상세정보
+const BOKJIRO_LOCAL_URL = 'https://apis.data.go.kr/B554287/LocalGovernmentWelfareInformations/LcgvWelfaredetailed'
 
 interface BokjiroLocalItem {
   servId: string
@@ -102,6 +103,10 @@ export async function syncBokjiroLocal(): Promise<{
       const res = await fetch(url.toString())
       apiCallsUsed++
 
+      if (res.status === 403) {
+        console.log('[Bokjiro-Local] API returned 403 - 활용신청 필요')
+        break
+      }
       if (!res.ok) throw new Error(`Bokjiro Local API error: ${res.status}`)
 
       const xml = await res.text()
@@ -122,8 +127,8 @@ export async function syncBokjiroLocal(): Promise<{
         const eligibilityTexts = [item.servDgst, item.trgterIndvdlNmArray, item.srvPvsnNm].filter(Boolean) as string[]
         const extraction = extractEligibility(eligibilityTexts)
 
-        // If ctpvNm gives us a region, use it (higher confidence than text extraction)
-        const regions = ctpvRegion ? [ctpvRegion] : (extraction.regions.length > 0 ? extraction.regions : null)
+        // ctpvNm이 있으면 구조화된 지역 사용 (텍스트 추출보다 신뢰도 높음)
+        const regions = ctpvRegion ? [ctpvRegion] : extraction.regions
 
         const record = {
           title: item.servNm,
@@ -133,13 +138,15 @@ export async function syncBokjiroLocal(): Promise<{
           end_date: null as string | null,
           detail_url: `https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=${item.servId}`,
           target_regions: regions,
-          target_business_types: extraction.businessTypes.length > 0 ? extraction.businessTypes : null,
+          target_business_types: extraction.businessTypes,
           target_employee_min: extraction.employeeMin,
           target_employee_max: extraction.employeeMax,
           target_revenue_min: extraction.revenueMin,
           target_revenue_max: extraction.revenueMax,
           target_business_age_min: extraction.businessAgeMinMonths,
           target_business_age_max: extraction.businessAgeMaxMonths,
+          target_founder_age_min: extraction.founderAgeMin,
+          target_founder_age_max: extraction.founderAgeMax,
           amount: null as string | null,
           is_active: true,
           source: 'bokjiro-local',

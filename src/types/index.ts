@@ -6,7 +6,17 @@ export type SupportCategory =
   | "내수"
   | "창업"
   | "경영"
+  | "복지"
+  | "주거"
+  | "육아"
+  | "교육"
+  | "건강"
+  | "고용"
+  | "생활"
   | "기타"
+
+export type ServiceType = 'business' | 'personal' | 'both' | 'unknown'
+export type UserType = 'personal' | 'business'
 
 export interface Support {
   id: string
@@ -24,6 +34,8 @@ export interface Support {
   targetRevenueMax: number | null
   targetBusinessAgeMin: number | null
   targetBusinessAgeMax: number | null
+  targetFounderAgeMin: number | null
+  targetFounderAgeMax: number | null
   amount: string | null
   isActive: boolean
   createdAt: string
@@ -34,17 +46,78 @@ export interface Support {
   rawPreferenceText?: string | null
   extractionConfidence?: Record<string, number> | null
   externalId?: string | null
+  serviceType?: ServiceType
+  targetAgeMin?: number | null
+  targetAgeMax?: number | null
+  targetHouseholdTypes?: string[] | null
+  targetIncomeLevels?: string[] | null
+  targetEmploymentStatus?: string[] | null
+  benefitCategories?: string[] | null
+}
+
+export type MatchTier = 'exact' | 'likely' | 'related'
+export type MatchTierV3 = 'tailored' | 'recommended' | 'exploratory'
+
+export interface MatchedScore {
+  supportId: string
+  score: number
+  tier: MatchTier | MatchTierV3 | string
+  breakdown: {
+    region: number
+    businessType?: number
+    employee?: number
+    revenue?: number
+    businessAge?: number
+    founderAge?: number
+    age?: number
+    householdType?: number
+    incomeLevel?: number
+    employmentStatus?: number
+  }
+  scores?: {
+    region: number
+    businessType?: number
+    employee?: number
+    revenue?: number
+    businessAge?: number
+    founderAge?: number
+    age?: number
+    householdType?: number
+    incomeLevel?: number
+    employmentStatus?: number
+    confidence: number
+    weighted: number
+  }
+}
+
+export interface MatchResultV3 {
+  tailored: MatchedScore[]
+  recommended: MatchedScore[]
+  exploratory: MatchedScore[]
+  all: MatchedScore[]
+  totalCount: number
+  totalAnalyzed: number
+  knockedOut: number
 }
 
 export interface Diagnosis {
   id: string
-  businessType: string
+  userType?: UserType
+  businessType: string | null
   region: string
-  employeeCount: number
-  annualRevenue: number
-  businessStartDate: string
+  employeeCount: number | null
+  annualRevenue: number | null
+  businessAge: number | null
+  founderAge: number | null
+  ageGroup?: string | null
+  gender?: string | null
+  householdType?: string | null
+  incomeLevel?: string | null
+  employmentStatus?: string | null
+  interestCategories?: string[] | null
   matchedSupportIds: string[]
   matchedCount: number
+  matchedScores?: MatchedScore[] | null
   createdAt: string
 }
 
@@ -53,5 +126,20 @@ export interface DiagnoseFormData {
   region: string
   employeeCount: number
   annualRevenue: number
-  businessStartDate: string
+  businessAge: number
+  founderAge: number
 }
+
+export interface PersonalFormData {
+  ageGroup: string
+  gender: string
+  region: string
+  householdType: string
+  incomeLevel: string
+  employmentStatus: string
+  interestCategories: string[]
+}
+
+export type UserInput =
+  | ({ userType: 'personal' } & PersonalFormData)
+  | ({ userType: 'business' } & DiagnoseFormData)

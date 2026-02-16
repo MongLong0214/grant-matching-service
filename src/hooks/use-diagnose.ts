@@ -2,19 +2,20 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import type { DiagnoseFormData } from '@/types'
+import type { UserInput } from '@/types'
 
 /**
  * 진단 요청 커스텀 훅
  *
  * 폼 제출 → API 호출 → 결과 페이지 리다이렉트 처리
+ * 개인/사업자 모두 지원
  */
 export function useDiagnose() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function submitDiagnosis(data: DiagnoseFormData): Promise<void> {
+  async function submitDiagnosis(data: UserInput): Promise<void> {
     setIsLoading(true)
     setError(null)
 

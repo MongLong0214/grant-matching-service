@@ -35,6 +35,7 @@ interface TestResult {
   matchedCount?: number
   tiers?: { exact: number; likely: number; related: number }
   error?: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   input?: any
 }
 
@@ -51,6 +52,7 @@ interface Stats {
   totalExact: number
   totalLikely: number
   totalRelated: number
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   failedInputs: Array<{ input: any; error: string }>
 }
 
@@ -107,6 +109,7 @@ async function testSingleCombination(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function testBatch(combinations: any[]): Promise<TestResult[]> {
   return Promise.all(
     combinations.map(([bt, r, ec, ar, bsd]) =>
@@ -117,6 +120,7 @@ async function testBatch(combinations: any[]): Promise<TestResult[]> {
 
 async function testValidationCase(
   description: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   input: any,
   expectedError: string
 ): Promise<{ passed: boolean; description: string; error?: string }> {
@@ -275,6 +279,7 @@ async function main() {
   console.log(`\nGenerating combinations...\n`)
 
   // Generate all combinations
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const combinations: any[] = []
   for (const bt of BUSINESS_TYPES) {
     for (const r of REGIONS) {
