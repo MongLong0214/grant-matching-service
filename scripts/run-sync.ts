@@ -5,18 +5,21 @@
  * 실행: npx tsx scripts/run-sync.ts
  */
 
-import { readFileSync } from 'fs'
+import { readFileSync, existsSync } from 'fs'
 
-// .env.local 수동 파싱 (dotenv 의존성 없이)
-const envContent = readFileSync('.env.local', 'utf-8')
-for (const line of envContent.split('\n')) {
-  const trimmed = line.trim()
-  if (!trimmed || trimmed.startsWith('#')) continue
-  const eqIdx = trimmed.indexOf('=')
-  if (eqIdx === -1) continue
-  const key = trimmed.slice(0, eqIdx).trim()
-  const val = trimmed.slice(eqIdx + 1).trim()
-  if (!process.env[key]) process.env[key] = val
+// .env.local 수동 파싱 (CI 환경에서는 건너뜀)
+const envPath = '.env.local'
+if (existsSync(envPath)) {
+  const envContent = readFileSync(envPath, 'utf-8')
+  for (const line of envContent.split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('#')) continue
+    const eqIdx = trimmed.indexOf('=')
+    if (eqIdx === -1) continue
+    const key = trimmed.slice(0, eqIdx).trim()
+    const val = trimmed.slice(eqIdx + 1).trim()
+    if (!process.env[key]) process.env[key] = val
+  }
 }
 
 async function main() {
@@ -75,4 +78,7 @@ async function main() {
   }
 }
 
-main().catch(console.error)
+main().catch((e) => {
+  console.error(e)
+  process.exit(1)
+})

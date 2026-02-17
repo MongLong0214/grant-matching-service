@@ -1,11 +1,10 @@
 name: Sync Government Support Data
 
 on:
-  # Manual trigger
   workflow_dispatch:
     inputs:
       source:
-        description: 'Source to sync (all, kstartup, bokjiro-central, bokjiro-local, bizinfo-rss)'
+        description: 'Source to sync (leave empty for all)'
         required: false
         default: 'all'
         type: choice
@@ -14,60 +13,46 @@ on:
           - kstartup
           - bokjiro-central
           - bokjiro-local
-          - bizinfo-rss
+          - subsidy24
+          - msit-rnd
+          - small-loan-finance
+          - loan-comparison
+          - sme-biz-announcement
+          - bizinfo-odcloud
+          - social-finance
 
-  # Backup schedule (daily at 4 AM UTC, 1 hour after Vercel cron)
+  # 매일 오전 3시 UTC (정오 KST)
   schedule:
-    - cron: '0 4 * * *'
+    - cron: '0 3 * * *'
 
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
+
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      DATA_GO_KR_API_KEY: ${{ secrets.DATA_GO_KR_API_KEY }}
+      SUBSIDY24_API_KEY: ${{ secrets.SUBSIDY24_API_KEY }}
 
     steps:
-      - name: Trigger sync
-        run: |
-          SOURCE="${{ github.event.inputs.source || 'all' }}"
-          BASE_URL="${{ secrets.APP_URL }}"
-          SYNC_SECRET="${{ secrets.SYNC_SECRET }}"
+      - name: Checkout
+        uses: actions/checkout@v4
 
-          if [ "$SOURCE" = "all" ]; then
-            ENDPOINTS=("kstartup" "bokjiro-central" "bokjiro-local" "bizinfo-rss")
-          else
-            ENDPOINTS=("$SOURCE")
-          fi
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
 
-          FAILED=0
-          for endpoint in "${ENDPOINTS[@]}"; do
-            echo "::group::Syncing $endpoint"
-            HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" \
-              -X POST \
-              -H "Authorization: Bearer $SYNC_SECRET" \
-              "${BASE_URL}/api/sync/${endpoint}")
+      - name: Install dependencies
+        run: npm ci
 
-            echo "Status: $HTTP_STATUS"
-            cat response.json | python3 -m json.tool 2>/dev/null || cat response.json
-            echo ""
-            echo "::endgroup::"
+      - name: Run sync
+        run: npx tsx scripts/run-sync.ts
 
-            if [ "$HTTP_STATUS" -ne 200 ]; then
-              echo "::error::Sync $endpoint failed with status $HTTP_STATUS"
-              FAILED=$((FAILED + 1))
-            fi
-          done
-
-          if [ $FAILED -gt 0 ]; then
-            echo "::error::$FAILED sync(s) failed"
-            exit 1
-          fi
-
-      - name: Check sync status
-        if: always()
-        run: |
-          BASE_URL="${{ secrets.APP_URL }}"
-          SYNC_SECRET="${{ secrets.SYNC_SECRET }}"
-
-          curl -s \
-            -H "Authorization: Bearer $SYNC_SECRET" \
-            "${BASE_URL}/api/sync/status" | python3 -m json.tool 2>/dev/null || echo "Status check failed"
+      - name: Report result
+        if: failure()
+        run: echo "::error::Data sync failed. Check logs above for details."
