@@ -1,6 +1,9 @@
-import { createClient } from '@supabase/supabase-js'
 import { extractEligibility } from '@/lib/extraction'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
+import {
+  createSyncClient, startSyncLog, completeSyncLog, failSyncLog,
+  upsertSupport, getXmlField, parseXmlItems, parseJsonItems, parseDate,
+} from './sync-helpers'
 
 // 중소벤처기업부_중소기업 사업 정보 v2 (data.go.kr, XML 응답)
 const SME_BIZ_API_URL = 'https://apis.data.go.kr/1421000/mssBizService_v2/getbizList_v2'
@@ -8,7 +11,7 @@ const SME_BIZ_API_URL = 'https://apis.data.go.kr/1421000/mssBizService_v2/getbiz
 interface SmeBizItem {
   pbancSn?: string            // 공고일련번호
   pbancTtl?: string           // 공고제목
-  pbancNm?: string            // 공고명 (대체 필드)
+  pbancNm?: string            // 공고명
   insttNm?: string            // 기관명
   jrsdInsttNm?: string        // 주관기관명
   pbancBgngDt?: string        // 공고시작일
@@ -44,19 +47,21 @@ function mapCategory(title?: string, bizNm?: string): string {
   return '기타'
 }
 
-function parseDate(dateStr?: string): string | null {
-  if (!dateStr) return null
-  const cleaned = dateStr.replace(/[^0-9]/g, '')
-  if (cleaned.length !== 8) return null
-  return `${cleaned.slice(0, 4)}-${cleaned.slice(4, 6)}-${cleaned.slice(6, 8)}`
+function parseXmlToItems(text: string): SmeBizItem[] {
+  const { blocks } = parseXmlItems(text)
+  return blocks.map(block => ({
+    pbancSn: getXmlField(block, 'itemId') || undefined,
+    pbancTtl: getXmlField(block, 'title') || undefined,
+    insttNm: getXmlField(block, 'writerPosition') || undefined,
+    pbancBgngDt: getXmlField(block, 'applicationStartDate') || undefined,
+    pbancEndDt: getXmlField(block, 'applicationEndDate') || undefined,
+    bsnsSumryCn: getXmlField(block, 'dataContents') || undefined,
+    pbancUrl: getXmlField(block, 'viewUrl') || undefined,
+  }))
 }
 
 export async function syncSmeBizAnnouncement(): Promise<{
-  fetched: number
-  inserted: number
-  updated: number
-  skipped: number
-  apiCallsUsed: number
+  fetched: number; inserted: number; updated: number; skipped: number; apiCallsUsed: number
 }> {
   const apiKey = process.env.DATA_GO_KR_API_KEY
   if (!apiKey) {
@@ -64,213 +69,96 @@ export async function syncSmeBizAnnouncement(): Promise<{
     return { fetched: 0, inserted: 0, updated: 0, skipped: 0, apiCallsUsed: 0 }
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-  const supabase = createClient(supabaseUrl, serviceKey)
-
-  const { data: syncLog } = await supabase
-    .from('sync_logs')
-    .insert({ source: 'sme-biz-announcement', status: 'running' })
-    .select()
-    .single()
-  const logId = syncLog?.id
-
-  let apiCallsUsed = 0
-  let inserted = 0
-  let updated = 0
-  let skipped = 0
+  const supabase = createSyncClient()
+  const logId = await startSyncLog(supabase, 'sme-biz-announcement')
+  let apiCallsUsed = 0, inserted = 0, updated = 0, skipped = 0
   const allItems: SmeBizItem[] = []
 
   try {
     let page = 1
-    const perPage = 100
-
     while (true) {
       const url = new URL(SME_BIZ_API_URL)
       url.searchParams.set('serviceKey', apiKey)
       url.searchParams.set('pageNo', String(page))
-      url.searchParams.set('numOfRows', String(perPage))
+      url.searchParams.set('numOfRows', '100')
       const res = await fetchWithRetry(url.toString())
       apiCallsUsed++
 
-      if (res.status === 403) {
-        console.log('[SmeBizAnnouncement] API returned 403 - check API key/subscription')
-        break
-      }
-
-      if (res.status === 404 || res.status === 500) {
-        const errBody = await res.text()
-        console.log(`[SmeBizAnnouncement] API returned ${res.status} (${errBody.trim()}) - API not found or key not authorized. Apply at data.go.kr`)
-        break
-      }
-
-      if (!res.ok) {
-        console.log(`[SmeBizAnnouncement] API error: ${res.status} ${res.statusText}`)
-        break
-      }
+      if (res.status === 403) { console.log('[SmeBizAnnouncement] 403 — API 키 확인 필요'); break }
+      if (res.status === 404 || res.status === 500) { console.log(`[SmeBizAnnouncement] ${res.status}`); break }
+      if (!res.ok) { console.log(`[SmeBizAnnouncement] API 오류: ${res.status}`); break }
 
       const text = await res.text()
       let itemList: SmeBizItem[] = []
       let totalCount = 0
 
-      // XML 응답 파싱 (v2 API는 XML만 반환)
       if (text.trim().startsWith('<')) {
-        const totalCountMatch = text.match(/<totalCount>(\d+)<\/totalCount>/)
-        totalCount = totalCountMatch ? parseInt(totalCountMatch[1]) : 0
-
-        const resultCodeMatch = text.match(/<resultCode>(\d+)<\/resultCode>/)
-        if (resultCodeMatch && resultCodeMatch[1] !== '00') {
-          const msgMatch = text.match(/<resultMsg>(.*?)<\/resultMsg>/)
-          console.log(`[SmeBizAnnouncement] API error: ${resultCodeMatch[1]} - ${msgMatch?.[1] || 'Unknown'}`)
-          break
-        }
-
-        const itemRegex = /<item>([\s\S]*?)<\/item>/g
-        let xmlMatch
-        while ((xmlMatch = itemRegex.exec(text)) !== null) {
-          const block = xmlMatch[1]
-          const get = (tag: string): string => {
-            const m = block.match(new RegExp(`<${tag}>(?:<!\\[CDATA\\[)?(.*?)(?:\\]\\]>)?</${tag}>`))
-            return m ? m[1].trim() : ''
-          }
-          // 실제 API XML 필드명 (2026-02 확인)
-          itemList.push({
-            pbancSn: get('itemId') || undefined,
-            pbancTtl: get('title') || undefined,
-            insttNm: get('writerPosition') || undefined,
-            pbancBgngDt: get('applicationStartDate') || undefined,
-            pbancEndDt: get('applicationEndDate') || undefined,
-            bsnsSumryCn: get('dataContents') || undefined,
-            pbancUrl: get('viewUrl') || undefined,
-          })
-        }
+        const xml = parseXmlItems(text)
+        totalCount = xml.totalCount
+        if (xml.error) { console.log(`[SmeBizAnnouncement] XML 오류: ${xml.error}`); break }
+        itemList = parseXmlToItems(text)
       } else {
-        // JSON fallback
-        try {
-          const json = JSON.parse(text) as Record<string, unknown>
-          const body = (json?.response as Record<string, unknown>)?.body as Record<string, unknown> | undefined
-          if (body) {
-            totalCount = (body.totalCount as number) || 0
-            const itemsField = body.items as Record<string, unknown> | undefined
-            const rawItems = itemsField?.item
-            if (rawItems && !Array.isArray(rawItems)) {
-              itemList = [rawItems as SmeBizItem]
-            } else {
-              itemList = (rawItems as SmeBizItem[]) || []
-            }
-          }
-          if (itemList.length === 0 && json?.data) {
-            totalCount = (json.totalCount as number) || 0
-            itemList = (json.data as SmeBizItem[]) || []
-          }
-        } catch {
-          console.log('[SmeBizAnnouncement] Non-JSON/XML response received')
-          break
-        }
+        const json = parseJsonItems<SmeBizItem>(text)
+        if (json.error) { console.log(`[SmeBizAnnouncement] 파싱 오류: ${json.error}`); break }
+        totalCount = json.totalCount
+        itemList = json.items
       }
 
-      if (!Array.isArray(itemList) || itemList.length === 0) break
+      if (itemList.length === 0) break
       allItems.push(...itemList)
-
       if (totalCount > 0 && allItems.length >= totalCount) break
       page++
-
       if (page > 50) break
-
-      // API rate limit 방지
       await new Promise((r) => setTimeout(r, 100))
     }
 
-    console.log(`[SmeBizAnnouncement] Fetched ${allItems.length} items in ${apiCallsUsed} API calls`)
+    console.log(`[SmeBizAnnouncement] ${allItems.length}건 수집, ${apiCallsUsed}회 API 호출`)
 
     for (const item of allItems) {
       const itemId = item.pbancSn || item.pbancTtl || item.pbancNm
       if (!itemId) { skipped++; continue }
       const externalId = `sme-biz-announcement-${itemId}`
-
       const title = item.pbancTtl || item.pbancNm || ''
-      const eligibilityTexts = [
-        item.trgtJgCn,
-        item.sprtCn,
-        item.bsnsSumryCn,
-        item.excptMtr,
-      ].filter(Boolean) as string[]
 
-      const extraction = extractEligibility(eligibilityTexts, title)
+      const extraction = extractEligibility(
+        [item.trgtJgCn, item.sprtCn, item.bsnsSumryCn, item.excptMtr].filter(Boolean) as string[],
+        title, item.insttNm || item.jrsdInsttNm,
+      )
 
       const record = {
-        title,
-        organization: item.insttNm || item.jrsdInsttNm || '중소벤처기업부',
+        title, organization: item.insttNm || item.jrsdInsttNm || '중소벤처기업부',
         category: mapCategory(title, item.bizNm),
         start_date: parseDate(item.pbancBgngDt || item.rcptBgngDt),
         end_date: parseDate(item.pbancEndDt || item.rcptEndDt),
         detail_url: item.pbancUrl || item.detailUrl || '',
-        target_regions: extraction.regions,
-        target_business_types: extraction.businessTypes,
-        target_employee_min: extraction.employeeMin,
-        target_employee_max: extraction.employeeMax,
-        target_revenue_min: extraction.revenueMin,
-        target_revenue_max: extraction.revenueMax,
-        target_business_age_min: extraction.businessAgeMinMonths,
-        target_business_age_max: extraction.businessAgeMaxMonths,
-        target_founder_age_min: extraction.founderAgeMin,
-        target_founder_age_max: extraction.founderAgeMax,
-        amount: null as string | null,
-        is_active: true,
-        source: 'sme-biz-announcement',
-        external_id: externalId,
+        target_regions: extraction.regions, target_business_types: extraction.businessTypes,
+        target_employee_min: extraction.employeeMin, target_employee_max: extraction.employeeMax,
+        target_revenue_min: extraction.revenueMin, target_revenue_max: extraction.revenueMax,
+        target_business_age_min: extraction.businessAgeMinMonths, target_business_age_max: extraction.businessAgeMaxMonths,
+        target_founder_age_min: extraction.founderAgeMin, target_founder_age_max: extraction.founderAgeMax,
+        amount: null as string | null, is_active: true,
+        source: 'sme-biz-announcement', external_id: externalId,
         raw_eligibility_text: item.trgtJgCn || item.bsnsSumryCn || null,
-        raw_exclusion_text: item.excptMtr || null,
-        raw_preference_text: null as string | null,
-        extraction_confidence: extraction.confidence,
-        service_type: 'business',
-        target_age_min: extraction.ageMin,
-        target_age_max: extraction.ageMax,
+        raw_exclusion_text: item.excptMtr || null, raw_preference_text: null as string | null,
+        extraction_confidence: extraction.confidence, service_type: 'business',
+        target_age_min: extraction.ageMin, target_age_max: extraction.ageMax,
         target_household_types: extraction.householdTypes.length > 0 ? extraction.householdTypes : null,
         target_income_levels: extraction.incomeLevels.length > 0 ? extraction.incomeLevels : null,
         target_employment_status: extraction.employmentStatus.length > 0 ? extraction.employmentStatus : null,
         benefit_categories: extraction.benefitCategories.length > 0 ? extraction.benefitCategories : null,
+        region_scope: extraction.regionScope,
       }
 
-      const { data: existing } = await supabase
-        .from('supports')
-        .select('id')
-        .eq('external_id', externalId)
-        .maybeSingle()
-
-      if (existing) {
-        const { error } = await supabase.from('supports').update(record).eq('external_id', externalId)
-        if (error) { skipped++; continue }
-        updated++
-      } else {
-        const { error } = await supabase.from('supports').insert(record)
-        if (error) { skipped++; continue }
-        inserted++
-      }
+      const result = await upsertSupport(supabase, externalId, record)
+      if (result === 'inserted') inserted++
+      else if (result === 'updated') updated++
+      else skipped++
     }
 
-    if (logId) {
-      await supabase.from('sync_logs').update({
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-        programs_fetched: allItems.length,
-        programs_inserted: inserted,
-        programs_updated: updated,
-        programs_skipped: skipped,
-        api_calls_used: apiCallsUsed,
-      }).eq('id', logId)
-    }
-
+    await completeSyncLog(supabase, logId, { fetched: allItems.length, inserted, updated, skipped, apiCallsUsed })
     return { fetched: allItems.length, inserted, updated, skipped, apiCallsUsed }
   } catch (error) {
-    if (logId) {
-      await supabase.from('sync_logs').update({
-        status: 'failed',
-        completed_at: new Date().toISOString(),
-        error_message: error instanceof Error ? error.message : 'Unknown error',
-        api_calls_used: apiCallsUsed,
-      }).eq('id', logId)
-    }
+    await failSyncLog(supabase, logId, error, apiCallsUsed)
     throw error
   }
 }

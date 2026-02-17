@@ -2,13 +2,12 @@
 
 import { useState } from 'react'
 import { Label } from '@/components/ui/label'
-import { Combobox } from '@/components/ui/combobox'
+import { RegionSelector } from '@/components/ui/region-selector'
 import { RadioOptionGroup } from '@/components/radio-option-group'
 import { SubmitButton } from '@/components/submit-button'
 import { Calendar, User, MapPin, Home, Wallet, Briefcase, Heart, ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
-  REGIONS,
   AGE_GROUP_OPTIONS,
   GENDER_OPTIONS,
   HOUSEHOLD_TYPE_OPTIONS,
@@ -33,7 +32,7 @@ const FIELD_LABELS: Record<string, string> = {
 
 export const PersonalForm = ({ onSubmit, isLoading, onBack }: PersonalFormProps) => {
   const [formData, setFormData] = useState({
-    ageGroup: '', gender: '', region: '',
+    ageGroup: '', gender: '', region: '', subRegion: '',
     householdType: '', incomeLevel: '', employmentStatus: '',
     interestCategories: [] as string[],
   })
@@ -77,7 +76,7 @@ export const PersonalForm = ({ onSubmit, isLoading, onBack }: PersonalFormProps)
   async function handleSubmit(ev: React.FormEvent) {
     ev.preventDefault()
     if (Object.keys(validate()).length > 0) return
-    await onSubmit({ userType: 'personal', ...formData })
+    await onSubmit({ userType: 'personal', ...formData, subRegion: formData.subRegion || undefined })
   }
 
   return (
@@ -111,25 +110,21 @@ export const PersonalForm = ({ onSubmit, isLoading, onBack }: PersonalFormProps)
         columns={2}
       />
 
-      {/* 거주 지역 - Combobox */}
+      {/* 거주 지역 */}
       <div className="space-y-2">
         <Label htmlFor="personal-region" className="flex items-center gap-2 text-sm font-bold">
           <MapPin className="h-4 w-4" aria-hidden="true" />
           거주 지역
         </Label>
-        <Combobox
-          id="personal-region"
-          options={[...REGIONS]}
-          value={formData.region}
-          onValueChange={(val) => update('region', val)}
-          placeholder="지역을 선택해주세요"
-          aria-label="지역 선택"
-          aria-invalid={!!errors.region}
-          aria-describedby={errors.region ? 'personal-region-error' : undefined}
+        <RegionSelector
+          region={formData.region}
+          subRegion={formData.subRegion}
+          onRegionChange={(val) => update('region', val)}
+          onSubRegionChange={(val) => update('subRegion', val)}
+          regionId="personal-region"
+          subRegionId="personal-sub-region"
+          regionError={errors.region}
         />
-        {errors.region && (
-          <p id="personal-region-error" className="text-xs text-destructive" role="alert">{errors.region}</p>
-        )}
       </div>
 
       <RadioOptionGroup

@@ -135,12 +135,13 @@ export function mapToSupport(program: BizinfoProgram): SupportInsert {
   const startDate = program.신청시작일자?.trim() || null
   const endDate = program.신청종료일자?.trim() || null
 
-  // 사업명/소관기관/분야에서 자격 조건 추출
+  // 사업명/소관기관/수행기관/분야에서 자격 조건 추출
   const extraction = extractEligibility([
     program.사업명,
     program.소관기관,
+    program.수행기관,
     program.분야,
-  ])
+  ], program.사업명, program.소관기관)
 
   return {
     title: program.사업명,
@@ -163,5 +164,13 @@ export function mapToSupport(program: BizinfoProgram): SupportInsert {
     is_active: true,
     source: "bizinfo",
     extraction_confidence: { ...extraction.confidence },
+    service_type: 'business',
+    target_age_min: extraction.ageMin,
+    target_age_max: extraction.ageMax,
+    target_household_types: extraction.householdTypes.length > 0 ? extraction.householdTypes : null,
+    target_income_levels: extraction.incomeLevels.length > 0 ? extraction.incomeLevels : null,
+    target_employment_status: extraction.employmentStatus.length > 0 ? extraction.employmentStatus : null,
+    benefit_categories: extraction.benefitCategories.length > 0 ? extraction.benefitCategories : null,
+    region_scope: extraction.regionScope,
   }
 }

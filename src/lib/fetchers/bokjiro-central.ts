@@ -90,7 +90,7 @@ export async function syncBokjiroCentral(): Promise<{
           item.srvPvsnNm,
         ].filter(Boolean) as string[]
 
-        const extraction = extractEligibility(eligibilityTexts, item.servNm)
+        const extraction = extractEligibility(eligibilityTexts, item.servNm, item.jurMnofNm)
 
         // 복지로는 기본 personal, 사업자 키워드가 있으면 both
         const hasBizKeywords = /기업|사업자|소상공인|법인|자영업/.test(item.servDgst || '')
@@ -128,6 +128,7 @@ export async function syncBokjiroCentral(): Promise<{
           target_income_levels: extraction.incomeLevels.length > 0 ? extraction.incomeLevels : null,
           target_employment_status: extraction.employmentStatus.length > 0 ? extraction.employmentStatus : null,
           benefit_categories: extraction.benefitCategories.length > 0 ? extraction.benefitCategories : null,
+          region_scope: extraction.regionScope,
         }
 
         const { error } = await supabase

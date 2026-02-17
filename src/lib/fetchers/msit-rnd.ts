@@ -80,7 +80,7 @@ export async function syncMsitRnd(): Promise<{
         item.subject,
       ].filter(Boolean) as string[]
 
-      const extraction = extractEligibility(eligibilityTexts)
+      const extraction = extractEligibility(eligibilityTexts, undefined, item.deptName)
 
       const record = {
         title: item.subject,
@@ -108,6 +108,13 @@ export async function syncMsitRnd(): Promise<{
         raw_preference_text: null as string | null,
         extraction_confidence: extraction.confidence,
         service_type: 'business',
+        target_age_min: extraction.ageMin,
+        target_age_max: extraction.ageMax,
+        target_household_types: extraction.householdTypes.length > 0 ? extraction.householdTypes : null,
+        target_income_levels: extraction.incomeLevels.length > 0 ? extraction.incomeLevels : null,
+        target_employment_status: extraction.employmentStatus.length > 0 ? extraction.employmentStatus : null,
+        benefit_categories: extraction.benefitCategories.length > 0 ? extraction.benefitCategories : null,
+        region_scope: extraction.regionScope,
       }
 
       const { error } = await supabase

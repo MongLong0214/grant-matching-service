@@ -105,7 +105,7 @@ export async function syncSubsidy24(): Promise<{
         item.선정기준,
       ].filter(Boolean) as string[]
 
-      const extraction = extractEligibility(eligibilityTexts, item.서비스명)
+      const extraction = extractEligibility(eligibilityTexts, item.서비스명, item.부서명)
 
       // 사용자구분 기반 service_type 결정
       const userCategory = item.사용자구분 || ''
@@ -148,6 +148,7 @@ export async function syncSubsidy24(): Promise<{
         target_income_levels: extraction.incomeLevels.length > 0 ? extraction.incomeLevels : null,
         target_employment_status: extraction.employmentStatus.length > 0 ? extraction.employmentStatus : null,
         benefit_categories: extraction.benefitCategories.length > 0 ? extraction.benefitCategories : null,
+        region_scope: extraction.regionScope,
       }
 
       const { error } = await supabase

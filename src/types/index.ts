@@ -16,6 +16,7 @@ export type SupportCategory =
   | "기타"
 
 export type ServiceType = 'business' | 'personal' | 'both' | 'unknown'
+export type RegionScope = 'national' | 'regional' | 'unknown'
 export type UserType = 'personal' | 'business'
 
 export interface Support {
@@ -27,6 +28,7 @@ export interface Support {
   endDate: string | null
   detailUrl: string
   targetRegions: string[] | null
+  targetSubRegions?: string[] | null
   targetBusinessTypes: string[] | null
   targetEmployeeMin: number | null
   targetEmployeeMax: number | null
@@ -53,6 +55,7 @@ export interface Support {
   targetIncomeLevels?: string[] | null
   targetEmploymentStatus?: string[] | null
   benefitCategories?: string[] | null
+  regionScope?: RegionScope
 }
 
 export type MatchTier = 'exact' | 'likely' | 'related'
@@ -95,6 +98,7 @@ export interface Diagnosis {
   userType?: UserType
   businessType: string | null
   region: string
+  subRegion?: string | null
   employeeCount: number | null
   annualRevenue: number | null
   businessAge: number | null
@@ -114,6 +118,7 @@ export interface Diagnosis {
 export interface DiagnoseFormData {
   businessType: string
   region: string
+  subRegion?: string
   employeeCount: number
   annualRevenue: number
   businessAge: number
@@ -124,6 +129,7 @@ export interface PersonalFormData {
   ageGroup: string
   gender: string
   region: string
+  subRegion?: string
   householdType: string
   incomeLevel: string
   employmentStatus: string

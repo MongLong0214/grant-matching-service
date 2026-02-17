@@ -1,3 +1,5 @@
+import { REGION_DISTRICTS } from '@/constants'
+
 /**
  * 한국 17개 광역시도 지역명 변형 매핑
  * 모든 알려진 변형을 표준 지역명으로 매핑
@@ -87,10 +89,19 @@ const CITY_TO_REGION: Record<string, string> = {
   영도구: '부산', 영도: '부산', 부산진구: '부산', 동래구: '부산',
   해운대구: '부산', 사하구: '부산', 금정구: '부산', 연제구: '부산',
   수영구: '부산', 사상구: '부산', 기장군: '부산',
-  // 인천 자치구 (서구 제외 — 5개 도시에 존재하여 모호 + "달서구" 부분매칭 유발)
+  // 인천 자치구 (서구 제외 — 5개 도시에 존재하여 모호)
   미추홀구: '인천', 연수구: '인천', 남동구: '인천', 부평구: '인천', 계양구: '인천',
+  강화군: '인천', 옹진군: '인천',
   // 대구 자치구
   수성구: '대구', 달서구: '대구', 달성군: '대구',
+  // 울산 자치구/군
+  울주군: '울산',
+  // 광주 자치구
+  광산구: '광주',
+  // 대전 자치구
+  유성구: '대전', 대덕구: '대전',
+  // 제주 행정시
+  제주시: '제주', 서귀포시: '제주', 서귀포: '제주',
 }
 
 /**
@@ -146,12 +157,13 @@ for (const [city, region] of Object.entries(CITY_TO_REGION)) {
   CTPV_TO_REGION[city] = region
 }
 
-export function extractRegions(text: string): string[] {
+export function extractRegionsWithDistricts(text: string): { regions: string[], subRegions: string[] } {
   if (/전\s*국|전지역|지역\s*(제한|무관)|제한\s*없/.test(text)) {
-    return []  // 빈 배열 = 전국 (모든 지역 매칭)
+    return { regions: [], subRegions: [] }
   }
 
-  const found = new Set<string>()
+  const foundRegions = new Set<string>()
+  const foundSubRegions = new Set<string>()
 
   // 시도 레벨 매칭 (긴 변형 우선, 한글 경계 체크 적용)
   for (const [region, variants] of Object.entries(REGION_VARIANTS)) {
@@ -162,7 +174,7 @@ export function extractRegions(text: string): string[] {
         const idx = text.indexOf(variant, startPos)
         if (idx === -1) break
         if (isValidBoundary(text, idx, variant.length)) {
-          found.add(region)
+          foundRegions.add(region)
           matched = true
           break
         }
@@ -172,19 +184,62 @@ export function extractRegions(text: string): string[] {
     }
   }
 
-  // 시/군/구 → 시도 매핑 (제목에 "평택시", "중랑구" 등이 있을 때)
+  // 시/군/구 → 시도 매핑 + subRegion 보존
   for (const [city, region] of Object.entries(CITY_TO_REGION)) {
     let startPos = 0
     while (startPos < text.length) {
       const idx = text.indexOf(city, startPos)
       if (idx === -1) break
       if (isValidBoundary(text, idx, city.length)) {
-        found.add(region)
+        foundRegions.add(region)
+        foundSubRegions.add(city)
         break
       }
       startPos = idx + 1
     }
   }
 
-  return Array.from(found)
+  // 시/도가 확정된 경우, 해당 시/도의 구/군 중 텍스트에 나오는 것을 subRegions에 추가
+  // (CITY_TO_REGION에 없는 모호한 구/군: 중구, 남구, 북구, 서구, 강서구 등)
+  for (const region of foundRegions) {
+    const districts = REGION_DISTRICTS[region]
+    if (!districts) continue
+    for (const district of districts) {
+      if (foundSubRegions.has(district)) continue
+      let startPos = 0
+      while (startPos < text.length) {
+        const idx = text.indexOf(district, startPos)
+        if (idx === -1) break
+        if (isValidBoundary(text, idx, district.length)) {
+          foundSubRegions.add(district)
+          break
+        }
+        startPos = idx + 1
+      }
+    }
+  }
+
+  return {
+    regions: Array.from(foundRegions),
+    subRegions: Array.from(foundSubRegions),
+  }
+}
+
+export function extractRegions(text: string): string[] {
+  return extractRegionsWithDistricts(text).regions
+}
+
+const SIDO_SHORT = ['서울','부산','대구','인천','광주','대전','울산','세종','경기','강원','충북','충남','전북','전남','경북','경남','제주']
+
+/**
+ * 기관명에서 지역 추출을 위한 전처리
+ * "대전신용보증재단" → "대전 신용보증재단" (경계 체크 통과하도록)
+ */
+export function preprocessOrgForRegion(org: string): string {
+  for (const sido of SIDO_SHORT) {
+    if (org.startsWith(sido) && org.length > sido.length) {
+      return sido + ' ' + org.slice(sido.length)
+    }
+  }
+  return org
 }

@@ -4,7 +4,7 @@ import type { DiagnoseFormData, PersonalFormData, Support } from '@/types'
 import {
   AGE_GROUP_TO_VALUE, INCOME_ORDER, expandBusinessType,
   scoreAge, scoreBusinessAge, scoreBusinessType, scoreEmploymentStatus,
-  scoreHouseholdType, scoreIncomeLevel, scoreRange, scoreRegion,
+  scoreHouseholdType, scoreIncomeLevel, scoreRange, scoreRegionWithDistrict,
 } from './scores'
 
 export const BUSINESS_WEIGHTS = {
@@ -40,10 +40,13 @@ export function getBusinessDimensions(support: Support, input: DiagnoseFormData)
   const c = (support.extractionConfidence ?? null) as ExtractionConfidence | null
   const regions = support.targetRegions
   const types = support.targetBusinessTypes
+  const scope = support.regionScope ?? 'unknown'
+  // region hasData: regional이면 기존 로직, national/unknown이면 항상 true (점수에 반영되므로)
+  const regionHasData = scope !== 'regional' ? true : hasArr(regions, c?.regions ?? 0)
   return [
     { key: 'region', weight: BUSINESS_WEIGHTS.region, isSpecific: true,
-      hasData: hasArr(regions, c?.regions ?? 0), confidence: c?.regions ?? 0,
-      rawScore: regions && regions.length > 0 ? scoreRegion(regions, input.region) : 0 },
+      hasData: regionHasData, confidence: scope !== 'regional' ? 0.9 : (c?.regions ?? 0),
+      rawScore: scoreRegionWithDistrict(regions ?? [], support.targetSubRegions ?? null, scope, input.region, input.subRegion) },
     { key: 'businessType', weight: BUSINESS_WEIGHTS.businessType, isSpecific: true,
       hasData: hasArr(types, c?.businessTypes ?? 0), confidence: c?.businessTypes ?? 0,
       rawScore: types && types.length > 0 ? scoreBusinessType(types, input.businessType) : 0 },
@@ -69,10 +72,12 @@ export function getBusinessDimensions(support: Support, input: DiagnoseFormData)
 export function getPersonalDimensions(support: Support, input: PersonalFormData): DimensionInfo[] {
   const c = (support.extractionConfidence ?? null) as ExtractionConfidence | null
   const regions = support.targetRegions
+  const scope = support.regionScope ?? 'unknown'
+  const regionHasData = scope !== 'regional' ? true : hasArr(regions, c?.regions ?? 0)
   return [
     { key: 'region', weight: PERSONAL_WEIGHTS.region, isSpecific: true,
-      hasData: hasArr(regions, c?.regions ?? 0), confidence: c?.regions ?? 0,
-      rawScore: regions && regions.length > 0 ? scoreRegion(regions, input.region) : 0 },
+      hasData: regionHasData, confidence: scope !== 'regional' ? 0.9 : (c?.regions ?? 0),
+      rawScore: scoreRegionWithDistrict(regions ?? [], support.targetSubRegions ?? null, scope, input.region, input.subRegion) },
     { key: 'age', weight: PERSONAL_WEIGHTS.age, isSpecific: true,
       hasData: hasRange(support.targetAgeMin, support.targetAgeMax, c?.age ?? 0), confidence: c?.age ?? 0,
       rawScore: support.targetAgeMin !== null || support.targetAgeMax !== null
@@ -94,8 +99,8 @@ export function getPersonalDimensions(support: Support, input: PersonalFormData)
 export function isKnockedOutBusiness(support: Support, input: DiagnoseFormData): boolean {
   const c = (support.extractionConfidence ?? null) as ExtractionConfidence | null
   const regions = support.targetRegions
-  // 지역 명시 + 사용자 미포함 → 적극 knockout (conf 0.5 이상이면 충분)
-  if (regions && regions.length > 0 && (c?.regions ?? 0) >= 0.5) {
+  // regional만 knockout (national/unknown은 점수 패널티로 처리)
+  if (support.regionScope === 'regional' && regions && regions.length > 0 && (c?.regions ?? 0) >= 0.5) {
     if (!regions.includes(input.region)) return true
   }
   const types = support.targetBusinessTypes
@@ -117,8 +122,8 @@ export function isKnockedOutBusiness(support: Support, input: DiagnoseFormData):
 export function isKnockedOutPersonal(support: Support, input: PersonalFormData): boolean {
   const c = (support.extractionConfidence ?? null) as ExtractionConfidence | null
   const regions = support.targetRegions
-  // 지역 명시 + 사용자 미포함 → 적극 knockout (conf 0.5 이상이면 충분)
-  if (regions && regions.length > 0 && (c?.regions ?? 0) >= 0.5) {
+  // regional만 knockout (national/unknown은 점수 패널티로 처리)
+  if (support.regionScope === 'regional' && regions && regions.length > 0 && (c?.regions ?? 0) >= 0.5) {
     if (!regions.includes(input.region)) return true
   }
   const userAge = AGE_GROUP_TO_VALUE[input.ageGroup]

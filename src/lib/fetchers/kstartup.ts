@@ -50,7 +50,7 @@ export async function syncKStartup(): Promise<{
       ].filter(Boolean) as string[]
 
       const title = item.pblancNm || item.bizPblancNm || ''
-      const extraction = extractEligibility(eligibilityTexts, title)
+      const extraction = extractEligibility(eligibilityTexts, title, item.jrsdInsttNm || item.excInsttNm)
 
       const record = {
         title,
@@ -84,6 +84,7 @@ export async function syncKStartup(): Promise<{
         target_income_levels: extraction.incomeLevels.length > 0 ? extraction.incomeLevels : null,
         target_employment_status: extraction.employmentStatus.length > 0 ? extraction.employmentStatus : null,
         benefit_categories: extraction.benefitCategories.length > 0 ? extraction.benefitCategories : null,
+        region_scope: extraction.regionScope,
       }
 
       const { error } = await supabase

@@ -5,9 +5,10 @@ import { Label } from '@/components/ui/label'
 import { Combobox } from '@/components/ui/combobox'
 import { RadioOptionGroup } from '@/components/radio-option-group'
 import { SubmitButton } from '@/components/submit-button'
+import { RegionSelector } from '@/components/ui/region-selector'
 import { Store, MapPin, Users, Banknote, Clock, UserCircle, ArrowLeft } from 'lucide-react'
 import {
-  BUSINESS_TYPES, REGIONS, EMPLOYEE_OPTIONS,
+  BUSINESS_TYPES, EMPLOYEE_OPTIONS,
   REVENUE_OPTIONS, BUSINESS_AGE_OPTIONS, FOUNDER_AGE_OPTIONS,
 } from '@/constants'
 import type { UserInput } from '@/types'
@@ -26,12 +27,13 @@ const FIELD_LABELS: Record<string, string> = {
 
 export const BusinessForm = ({ onSubmit, isLoading, onBack }: BusinessFormProps) => {
   const [formData, setFormData] = useState({
-    businessType: '', region: '', employeeCount: '',
+    businessType: '', region: '', subRegion: '', employeeCount: '',
     annualRevenue: '', businessAge: '', founderAge: '',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const filledCount = Object.values(formData).filter(Boolean).length
+  const { subRegion: _sub, ...countFields } = formData
+  const filledCount = Object.values(countFields).filter(Boolean).length
 
   function update(field: string, value: string) {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -75,6 +77,7 @@ export const BusinessForm = ({ onSubmit, isLoading, onBack }: BusinessFormProps)
       userType: 'business',
       businessType: formData.businessType,
       region: formData.region,
+      subRegion: formData.subRegion || undefined,
       employeeCount: Number(formData.employeeCount),
       annualRevenue: Number(formData.annualRevenue),
       businessAge: Number(formData.businessAge),
@@ -119,26 +122,22 @@ export const BusinessForm = ({ onSubmit, isLoading, onBack }: BusinessFormProps)
         )}
       </div>
 
-      {/* 지역 - Combobox */}
+      {/* 지역 */}
       <div className="space-y-2">
         <Label htmlFor="region" className="flex items-center gap-2 text-sm font-bold">
           <MapPin className="h-4 w-4" aria-hidden="true" />
           지역
         </Label>
-        <Combobox
-          id="region"
-          options={[...REGIONS]}
-          value={formData.region}
-          onValueChange={(val) => update('region', val)}
-          placeholder="지역을 선택해주세요"
-          aria-label="지역 선택"
-          aria-invalid={!!errors.region}
-          aria-describedby={errors.region ? 'region-error' : undefined}
-          onBlur={() => validateField('region')}
+        <RegionSelector
+          region={formData.region}
+          subRegion={formData.subRegion}
+          onRegionChange={(val) => update('region', val)}
+          onSubRegionChange={(val) => update('subRegion', val)}
+          regionId="region"
+          subRegionId="sub-region"
+          regionError={errors.region}
+          onRegionBlur={() => validateField('region')}
         />
-        {errors.region && (
-          <p id="region-error" className="text-xs text-destructive" role="alert">{errors.region}</p>
-        )}
       </div>
 
       <RadioOptionGroup

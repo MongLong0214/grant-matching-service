@@ -13,7 +13,8 @@ for (const l of env.split('\n')) {
   const e = t.indexOf('=')
   if (e === -1) continue
   const k = t.slice(0, e).trim()
-  const v = t.slice(e + 1).trim()
+  let v = t.slice(e + 1).trim()
+  if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1)
   if (!process.env[k]) process.env[k] = v
 }
 
@@ -24,6 +25,7 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 interface SupportRow {
   id: string
   title: string
+  organization: string | null
   raw_eligibility_text: string | null
   raw_preference_text: string | null
   raw_exclusion_text: string | null
@@ -43,12 +45,15 @@ interface SupportRow {
   target_income_levels: string[] | null
   target_employment_status: string[] | null
   benefit_categories: string[] | null
+  target_sub_regions: string[] | null
   extraction_confidence: Record<string, number> | null
+  region_scope: string | null
 }
 
 interface UpdatePayload {
   id: string
   target_regions: string[]
+  target_sub_regions: string[]
   target_business_types: string[]
   target_employee_min: number | null
   target_employee_max: number | null
@@ -65,6 +70,7 @@ interface UpdatePayload {
   target_employment_status: string[]
   benefit_categories: string[]
   extraction_confidence: Record<string, number>
+  region_scope: string
 }
 
 function arraysEqual(a: unknown[] | null, b: unknown[]): boolean {
@@ -91,7 +97,7 @@ async function main() {
   while (true) {
     const { data, error } = await supabase
       .from('supports')
-      .select('id, title, raw_eligibility_text, raw_preference_text, raw_exclusion_text, target_regions, target_business_types, target_employee_min, target_employee_max, target_revenue_min, target_revenue_max, target_business_age_min, target_business_age_max, target_founder_age_min, target_founder_age_max, target_age_min, target_age_max, target_household_types, target_income_levels, target_employment_status, benefit_categories, extraction_confidence')
+      .select('id, title, organization, raw_eligibility_text, raw_preference_text, raw_exclusion_text, target_regions, target_sub_regions, target_business_types, target_employee_min, target_employee_max, target_revenue_min, target_revenue_max, target_business_age_min, target_business_age_max, target_founder_age_min, target_founder_age_max, target_age_min, target_age_max, target_household_types, target_income_levels, target_employment_status, benefit_categories, extraction_confidence, region_scope')
       .eq('is_active', true)
       .range(from, from + PAGE_SIZE - 1)
 
@@ -109,11 +115,12 @@ async function main() {
 
   for (const row of allRows) {
     const texts = [row.raw_eligibility_text, row.raw_preference_text, row.raw_exclusion_text].filter(Boolean) as string[]
-    const result = extractEligibility(texts, row.title)
+    const result = extractEligibility(texts, row.title, row.organization ?? undefined)
 
     // 변경 여부 확인
     const changed =
       !arraysEqual(row.target_regions, result.regions) ||
+      !arraysEqual(row.target_sub_regions, result.subRegions) ||
       !arraysEqual(row.target_business_types, result.businessTypes) ||
       !numsEqual(row.target_employee_min, result.employeeMin) ||
       !numsEqual(row.target_employee_max, result.employeeMax) ||
@@ -128,12 +135,14 @@ async function main() {
       !arraysEqual(row.target_household_types, result.householdTypes) ||
       !arraysEqual(row.target_income_levels, result.incomeLevels) ||
       !arraysEqual(row.target_employment_status, result.employmentStatus) ||
-      !arraysEqual(row.benefit_categories, result.benefitCategories)
+      !arraysEqual(row.benefit_categories, result.benefitCategories) ||
+      row.region_scope !== result.regionScope
 
     if (changed) {
       updates.push({
         id: row.id,
         target_regions: result.regions,
+        target_sub_regions: result.subRegions,
         target_business_types: result.businessTypes,
         target_employee_min: result.employeeMin,
         target_employee_max: result.employeeMax,
@@ -150,6 +159,7 @@ async function main() {
         target_employment_status: result.employmentStatus,
         benefit_categories: result.benefitCategories,
         extraction_confidence: result.confidence as unknown as Record<string, number>,
+        region_scope: result.regionScope,
       })
       changedCount++
     }
@@ -180,6 +190,7 @@ async function main() {
   // 통계 출력
   const stats = {
     regionsChanged: 0,
+    subRegionsChanged: 0,
     businessTypesChanged: 0,
     employeeChanged: 0,
     revenueChanged: 0,
@@ -196,6 +207,7 @@ async function main() {
     const row = allRows.find(r => r.id === updates[i].id)!
     const u = updates[i]
     if (!arraysEqual(row.target_regions, u.target_regions)) stats.regionsChanged++
+    if (!arraysEqual(row.target_sub_regions, u.target_sub_regions)) stats.subRegionsChanged++
     if (!arraysEqual(row.target_business_types, u.target_business_types)) stats.businessTypesChanged++
     if (!numsEqual(row.target_employee_min, u.target_employee_min) || !numsEqual(row.target_employee_max, u.target_employee_max)) stats.employeeChanged++
     if (!numsEqual(row.target_revenue_min, u.target_revenue_min) || !numsEqual(row.target_revenue_max, u.target_revenue_max)) stats.revenueChanged++
@@ -210,6 +222,7 @@ async function main() {
 
   console.log('\n=== Change Statistics ===')
   console.log(`  Regions:          ${stats.regionsChanged}`)
+  console.log(`  Sub Regions:      ${stats.subRegionsChanged}`)
   console.log(`  Business Types:   ${stats.businessTypesChanged}`)
   console.log(`  Employee:         ${stats.employeeChanged}`)
   console.log(`  Revenue:          ${stats.revenueChanged}`)
@@ -220,6 +233,24 @@ async function main() {
   console.log(`  Income:           ${stats.incomeChanged}`)
   console.log(`  Employment:       ${stats.employmentChanged}`)
   console.log(`  Categories:       ${stats.categoriesChanged}`)
+
+  // region_scope 분포 통계
+  const scopeCounts = { national: 0, regional: 0, unknown: 0 }
+  for (const u of updates) {
+    const s = u.region_scope as keyof typeof scopeCounts
+    if (s in scopeCounts) scopeCounts[s]++
+  }
+  // 변경되지 않은 행의 기존 scope도 포함
+  for (const row of allRows) {
+    if (!updates.find(u => u.id === row.id)) {
+      const s = (row.region_scope ?? 'unknown') as keyof typeof scopeCounts
+      if (s in scopeCounts) scopeCounts[s]++
+    }
+  }
+  console.log('\n=== Region Scope Distribution (전체) ===')
+  console.log(`  national:  ${scopeCounts.national}`)
+  console.log(`  regional:  ${scopeCounts.regional}`)
+  console.log(`  unknown:   ${scopeCounts.unknown}`)
 }
 
 main().catch(console.error)

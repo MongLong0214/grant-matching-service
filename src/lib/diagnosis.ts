@@ -31,6 +31,7 @@ export async function saveDiagnosis(
       userType: input.userType,
       businessType: null,
       region: input.region,
+      subRegion: null,
       employeeCount: null,
       annualRevenue: null,
       businessAge: null,
@@ -49,12 +50,14 @@ export async function saveDiagnosis(
 
     if (input.userType === 'business') {
       base.businessType = input.businessType
+      base.subRegion = input.subRegion ?? null
       base.employeeCount = input.employeeCount
       base.annualRevenue = input.annualRevenue
       base.businessAge = input.businessAge
       base.founderAge = input.founderAge
     } else {
       base.ageGroup = input.ageGroup
+      base.subRegion = input.subRegion ?? null
       base.gender = input.gender
       base.householdType = input.householdType
       base.incomeLevel = input.incomeLevel
@@ -71,6 +74,7 @@ export async function saveDiagnosis(
 
   const commonPayload = {
     region: input.region,
+    sub_region: input.subRegion ?? null,
     matched_support_ids: supportIds,
     matched_count: matchedSupports.length,
     matched_scores: matchedScores ?? null,

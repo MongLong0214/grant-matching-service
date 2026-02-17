@@ -84,7 +84,7 @@ export async function syncBokjiroLocal(): Promise<{
         // ctpvNm으로 구조화된 지역 매핑
         const ctpvRegion = item.ctpvNm ? CTPV_TO_REGION[item.ctpvNm] : null
         const eligibilityTexts = [item.servDgst, item.trgterIndvdlNmArray, item.srvPvsnNm].filter(Boolean) as string[]
-        const extraction = extractEligibility(eligibilityTexts)
+        const extraction = extractEligibility(eligibilityTexts, item.servNm, item.jurMnofNm || item.ctpvNm)
 
         // ctpvNm이 있으면 구조화된 지역 사용 (텍스트 추출보다 신뢰도 높음)
         const regions = ctpvRegion ? [ctpvRegion] : extraction.regions
@@ -128,6 +128,7 @@ export async function syncBokjiroLocal(): Promise<{
           target_income_levels: extraction.incomeLevels.length > 0 ? extraction.incomeLevels : null,
           target_employment_status: extraction.employmentStatus.length > 0 ? extraction.employmentStatus : null,
           benefit_categories: extraction.benefitCategories.length > 0 ? extraction.benefitCategories : null,
+          region_scope: extraction.regionScope,
         }
 
         const { error } = await supabase
