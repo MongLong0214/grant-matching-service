@@ -51,7 +51,6 @@ async function main() {
     { source: 'sme-venture24', serviceType: 'business' },
     { source: 'youth-policy', serviceType: 'personal' },
     { source: 'kocca', serviceType: 'business' },
-    { source: 'bizinfo-rss', serviceType: 'business' },
   ]
 
   for (const rule of tagRules) {

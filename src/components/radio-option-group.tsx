@@ -43,10 +43,10 @@ export const RadioOptionGroup = ({
           <label
             key={opt.value}
             className={cn(
-              'flex cursor-pointer items-center justify-center rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2',
+              'flex cursor-pointer items-center justify-center rounded-xl border px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:bg-accent active:scale-[0.97] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2',
               value === String(opt.value)
-                ? 'border-primary bg-primary/10 text-primary'
-                : 'border-input'
+                ? 'border-primary bg-primary/10 text-primary shadow-sm'
+                : 'border-input hover:border-primary/20'
             )}
           >
             <RadioGroupItem value={String(opt.value)} className="sr-only" />

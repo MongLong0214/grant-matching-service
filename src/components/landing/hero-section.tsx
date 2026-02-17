@@ -37,7 +37,7 @@ export const HeroSection = () => {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
             </span>
-            2025년 최신 정부 혜택 데이터 반영
+            2026년 최신 정부 혜택 데이터 반영
           </div>
         </div>
 

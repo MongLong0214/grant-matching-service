@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: '이용약관',
-  description: 'Grant Match 서비스 이용약관',
+  description: '혜택찾기 서비스 이용약관',
 }
 
 const TermsPage = () => {
@@ -19,13 +19,13 @@ const TermsPage = () => {
       </Link>
 
       <h1 className="mb-2 text-3xl font-bold text-foreground sm:text-4xl">이용약관</h1>
-      <p className="mb-10 text-sm text-muted-foreground">최종 수정일: 2025년 1월 1일</p>
+      <p className="mb-10 text-sm text-muted-foreground">최종 수정일: 2026년 2월 17일</p>
 
       <div className="space-y-10 text-[15px] leading-relaxed text-muted-foreground">
         <section>
           <h2 className="mb-3 text-lg font-semibold text-foreground">제1조 (목적)</h2>
           <p>
-            본 약관은 Grant Match(이하 &ldquo;서비스&rdquo;)가 제공하는 정부지원금 매칭 서비스의
+            본 약관은 혜택찾기(이하 &ldquo;서비스&rdquo;)가 제공하는 정부 혜택 매칭 서비스의
             이용 조건 및 절차에 관한 사항을 규정함을 목적으로 합니다.
           </p>
         </section>
@@ -77,7 +77,7 @@ const TermsPage = () => {
         <section>
           <h2 className="mb-3 text-lg font-semibold text-foreground">제7조 (지적재산권)</h2>
           <p>
-            서비스에 포함된 디자인, 로고, 소프트웨어 등 모든 지적재산권은 Grant Match에 귀속됩니다.
+            서비스에 포함된 디자인, 로고, 소프트웨어 등 모든 지적재산권은 혜택찾기에 귀속됩니다.
             사용자는 서비스를 이용할 권리만을 가지며, 서비스의 콘텐츠를 무단 복제, 배포, 수정할 수 없습니다.
           </p>
         </section>
@@ -101,8 +101,8 @@ const TermsPage = () => {
         <div className="rounded-xl border border-border/60 bg-muted/30 p-6">
           <p className="text-sm text-muted-foreground">
             본 약관에 대한 문의사항이 있으시면{' '}
-            <a href="mailto:support@grantmatch.kr" className="font-medium text-primary hover:underline">
-              support@grantmatch.kr
+            <a href="mailto:support@gogov.co.kr" className="font-medium text-primary hover:underline">
+              support@gogov.co.kr
             </a>
             로 연락해 주시기 바랍니다.
           </p>

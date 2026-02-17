@@ -9,7 +9,7 @@ import { syncKStartup } from '@/lib/fetchers/kstartup'
  */
 export async function POST(request: NextRequest) {
   try {
-    // Auth check
+    // 인증 확인
     const authHeader = request.headers.get('authorization')
     const syncSecret = process.env.SYNC_SECRET
 

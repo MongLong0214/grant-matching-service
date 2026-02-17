@@ -4,8 +4,8 @@ import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import Script from 'next/script'
 import './globals.css'
-import Link from 'next/link'
-import { Wallet } from 'lucide-react'
+import { Header } from '@/components/layout/header'
+import { Footer } from '@/components/layout/footer'
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID
 
@@ -28,34 +28,38 @@ const notoSansKR = Noto_Sans_KR({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://grant-matching-service.vercel.app'),
+  metadataBase: new URL('https://gogov.co.kr'),
   title: {
-    default: 'Grant Match - 정부지원금 자동 매칭 | 30초 무료 진단',
-    template: '%s | Grant Match',
+    default: '혜택찾기 | 나에게 맞는 정부 혜택 찾기',
+    template: '%s | 혜택찾기',
   },
   description:
-    '사업 정보만 입력하면 95,000개 이상의 정부지원금 중 받을 수 있는 지원금을 30초 만에 무료로 찾아드립니다. 소상공인, 중소기업, 창업자를 위한 맞춤 지원금 매칭 서비스.',
+    '간단한 정보만 입력하면 6,000개 이상의 정부 지원사업 중 나에게 맞는 혜택을 30초 만에 무료로 찾아드립니다. 개인 복지부터 소상공인 지원금까지 맞춤 매칭.',
   keywords: [
+    '정부혜택',
+    '지원금',
+    '보조금',
+    '복지',
+    '소상공인',
+    '청년',
     '정부지원금',
     '소상공인 지원금',
-    '중소기업 지원금',
+    '청년 혜택',
+    '주거 지원',
+    '육아 지원',
+    '교육 지원',
+    '취업 지원',
     '창업 지원금',
     '정부 보조금',
-    '사업자 지원금',
-    '지원금 찾기',
+    '혜택 찾기',
     '지원금 매칭',
-    '소상공인시장진흥공단',
-    '중소벤처기업부',
-    '고용지원금',
-    '수출지원금',
-    'R&D 지원금',
-    '정부지원사업',
     '보조금 신청',
-    '지원금 자격',
+    '복지 혜택',
+    '정부 혜택 조회',
   ],
-  authors: [{ name: 'Grant Match' }],
-  creator: 'Grant Match',
-  publisher: 'Grant Match',
+  authors: [{ name: '혜택찾기' }],
+  creator: '혜택찾기',
+  publisher: '혜택찾기',
   formatDetection: {
     email: false,
     address: false,
@@ -64,17 +68,17 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'ko_KR',
-    url: 'https://grant-matching-service.vercel.app',
-    siteName: 'Grant Match',
-    title: 'Grant Match - 정부지원금 자동 매칭 | 30초 무료 진단',
+    url: 'https://gogov.co.kr',
+    siteName: '혜택찾기',
+    title: '혜택찾기 | 나에게 맞는 정부 혜택 찾기',
     description:
-      '사업 정보만 입력하면 95,000개 이상의 정부지원금 중 받을 수 있는 지원금을 30초 만에 무료로 찾아드립니다.',
+      '6,000개 이상의 정부 지원사업 중 나에게 맞는 혜택을 30초 만에 무료로 찾아드립니다. 개인 복지부터 소상공인 지원금까지.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Grant Match - 정부지원금 자동 매칭',
+    title: '혜택찾기 | 나에게 맞는 정부 혜택 찾기',
     description:
-      '30초 만에 받을 수 있는 정부지원금을 무료로 찾아보세요.',
+      '30초 만에 받을 수 있는 정부 혜택을 무료로 찾아보세요. 회원가입 없이 바로 조회.',
   },
   robots: {
     index: true,
@@ -88,13 +92,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: 'https://grant-matching-service.vercel.app',
-  },
-  verification: {
-    google: 'GOOGLE_VERIFICATION_CODE',
-    other: {
-      'naver-site-verification': 'NAVER_VERIFICATION_CODE',
-    },
+    canonical: 'https://gogov.co.kr',
   },
 }
 
@@ -104,7 +102,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ko">
+    <html lang="ko" className="scroll-smooth">
       <body className={`${geistSans.variable} ${geistMono.variable} ${notoSansKR.variable} antialiased bg-background text-foreground flex min-h-screen flex-col`}>
         <a href="#main-content" className="skip-to-content">
           본문으로 건너뛰기
@@ -117,16 +115,16 @@ export default function RootLayout({
               '@graph': [
                 {
                   '@type': 'Organization',
-                  name: 'Grant Match',
-                  url: 'https://grant-matching-service.vercel.app',
-                  logo: 'https://grant-matching-service.vercel.app/icon-512.png',
-                  description: '정부지원금 자동 매칭 서비스',
+                  name: '혜택찾기',
+                  url: 'https://gogov.co.kr',
+                  logo: 'https://gogov.co.kr/icon',
+                  description: '전국민 정부 혜택 매칭 서비스',
                 },
                 {
                   '@type': 'WebApplication',
-                  name: 'Grant Match',
-                  url: 'https://grant-matching-service.vercel.app',
-                  applicationCategory: 'FinanceApplication',
+                  name: '혜택찾기',
+                  url: 'https://gogov.co.kr',
+                  applicationCategory: 'GovernmentService',
                   operatingSystem: 'Web',
                   offers: {
                     '@type': 'Offer',
@@ -134,45 +132,66 @@ export default function RootLayout({
                     priceCurrency: 'KRW',
                   },
                   description:
-                    '사업 정보만 입력하면 95,000개 이상의 정부지원금 중 받을 수 있는 지원금을 30초 만에 무료로 찾아드립니다.',
+                    '6,000개 이상의 정부 지원사업 중 나에게 맞는 혜택을 30초 만에 무료로 찾아드립니다.',
                   inLanguage: 'ko',
                 },
                 {
                   '@type': 'WebSite',
-                  name: 'Grant Match',
-                  url: 'https://grant-matching-service.vercel.app',
+                  name: '혜택찾기',
+                  url: 'https://gogov.co.kr',
                   inLanguage: 'ko',
-                  potentialAction: {
-                    '@type': 'SearchAction',
-                    target:
-                      'https://grant-matching-service.vercel.app/diagnose',
-                    'query-input':
-                      'required name=search_term_string',
-                  },
+                },
+                {
+                  '@type': 'FAQPage',
+                  mainEntity: [
+                    {
+                      '@type': 'Question',
+                      name: '정말 무료인가요?',
+                      acceptedAnswer: {
+                        '@type': 'Answer',
+                        text: '네, 혜택찾기의 모든 진단 서비스는 100% 무료입니다. 숨겨진 비용이나 추가 결제는 일절 없으며, 회원가입 없이도 바로 이용하실 수 있습니다.',
+                      },
+                    },
+                    {
+                      '@type': 'Question',
+                      name: '개인과 사업자 중 어떤 걸 선택해야 하나요?',
+                      acceptedAnswer: {
+                        '@type': 'Answer',
+                        text: '주거/육아/교육/건강 등 생활 복지 혜택을 찾으신다면 개인을, 창업/고용/수출/R&D 등 사업 관련 지원금을 찾으신다면 사업자를 선택하세요. 두 가지 모두 진단받으실 수도 있습니다.',
+                      },
+                    },
+                    {
+                      '@type': 'Question',
+                      name: '어떤 혜택을 찾아주나요?',
+                      acceptedAnswer: {
+                        '@type': 'Answer',
+                        text: '복지로, 보조금24, 중소벤처기업부 등의 데이터를 연동하여 6,000개 이상의 정부 지원사업을 분석합니다. 개인 복지부터 사업자 지원금까지 폭넓게 다룹니다.',
+                      },
+                    },
+                    {
+                      '@type': 'Question',
+                      name: '입력한 정보는 안전한가요?',
+                      acceptedAnswer: {
+                        '@type': 'Answer',
+                        text: '입력하신 정보는 혜택 매칭 분석에만 사용되며, 분석 완료 후 즉시 폐기됩니다. 별도의 데이터 저장이나 제3자 제공은 일절 하지 않습니다.',
+                      },
+                    },
+                    {
+                      '@type': 'Question',
+                      name: '진단 결과가 나온 후 어떻게 신청하나요?',
+                      acceptedAnswer: {
+                        '@type': 'Answer',
+                        text: '진단 결과에서 각 혜택의 상세 정보와 함께 신청 방법, 담당기관 연락처를 제공합니다. 해당 기관의 공식 채널을 통해 직접 신청하실 수 있습니다.',
+                      },
+                    },
+                  ],
                 },
               ],
             }),
           }}
         />
-        {/* Header */}
-        <header role="banner" className="sticky top-0 z-50 w-full border-b border-border bg-white/80 backdrop-blur">
-          <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-4">
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-2">
-              <Wallet className="h-6 w-6 text-primary" />
-              <span className="text-lg font-bold">Grant Match</span>
-            </Link>
+        <Header />
 
-            {/* Navigation */}
-            <nav role="navigation" aria-label="메인 네비게이션" className="flex items-center">
-              <Link href="/diagnose" className="text-sm md:text-base font-medium hover:text-primary">
-                진단하기
-              </Link>
-            </nav>
-          </div>
-        </header>
-
-        {/* Main Content */}
         <main id="main-content" className="flex-1">{children}</main>
         <Analytics />
         <SpeedInsights />
@@ -188,39 +207,7 @@ export default function RootLayout({
           </>
         )}
 
-        {/* Footer */}
-        <footer role="contentinfo" className="w-full border-t bg-white py-10">
-          <div className="mx-auto max-w-[1200px] px-4">
-            <div className="flex flex-col gap-6 text-center md:flex-row md:items-start md:justify-between md:text-left">
-              {/* Logo */}
-              <div className="flex items-center justify-center gap-2 md:justify-start">
-                <Wallet className="h-5 w-5 text-primary" />
-                <span className="font-bold">Grant Match</span>
-              </div>
-
-              {/* Links */}
-              <div className="flex justify-center gap-4 md:gap-6 text-sm text-muted-foreground">
-                <Link href="/terms" className="hover:text-foreground">
-                  이용약관
-                </Link>
-                <Link href="/privacy" className="hover:text-foreground">
-                  개인정보처리방침
-                </Link>
-              </div>
-
-              {/* Copyright */}
-              <p className="text-sm text-muted-foreground">
-                © 2025 Grant Match. All rights reserved.
-              </p>
-            </div>
-
-            {/* Disclaimer */}
-            <p className="mt-6 text-xs md:text-xs text-gray-400">
-              본 서비스는 정부지원금 정보를 제공하는 서비스이며, 실제 지원금 신청 및 승인은 각 사업 담당 기관의 심사를 거쳐 결정됩니다.
-              제공되는 정보는 참고용이며, 실제 지원 가능 여부는 담당 기관에 문의하시기 바랍니다.
-            </p>
-          </div>
-        </footer>
+        <Footer />
       </body>
     </html>
   )

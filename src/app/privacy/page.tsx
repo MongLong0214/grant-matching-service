@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: '개인정보처리방침',
-  description: 'Grant Match 개인정보처리방침',
+  description: '혜택찾기 개인정보처리방침',
 }
 
 const PrivacyPage = () => {
@@ -19,11 +19,11 @@ const PrivacyPage = () => {
       </Link>
 
       <h1 className="mb-2 text-3xl font-bold text-foreground sm:text-4xl">개인정보처리방침</h1>
-      <p className="mb-10 text-sm text-muted-foreground">최종 수정일: 2025년 1월 1일</p>
+      <p className="mb-10 text-sm text-muted-foreground">최종 수정일: 2026년 2월 17일</p>
 
       <div className="space-y-10 text-[15px] leading-relaxed text-muted-foreground">
         <p>
-          Grant Match(이하 &ldquo;서비스&rdquo;)는 「개인정보 보호법」에 따라 이용자의 개인정보를 보호하고,
+          혜택찾기(이하 &ldquo;서비스&rdquo;)는 「개인정보 보호법」에 따라 이용자의 개인정보를 보호하고,
           이와 관련한 고충을 신속하고 원활하게 처리할 수 있도록 다음과 같이 개인정보처리방침을 수립·공개합니다.
         </p>
 
@@ -31,13 +31,20 @@ const PrivacyPage = () => {
           <h2 className="mb-3 text-lg font-semibold text-foreground">
             제1조 (수집하는 정보)
           </h2>
-          <p className="mb-3">서비스는 지원금 매칭 분석을 위해 다음의 사업 정보만을 수집합니다.</p>
+          <p className="mb-3">서비스는 혜택 매칭 분석을 위해 다음의 정보만을 수집합니다.</p>
+          <p className="mb-2 text-sm font-medium text-foreground">개인 진단:</p>
+          <ul className="mb-3 list-disc space-y-1 pl-5">
+            <li>연령대, 성별, 거주 지역</li>
+            <li>가구 유형, 소득 수준, 취업 상태</li>
+            <li>관심 분야 (주거/육아/교육/건강 등)</li>
+          </ul>
+          <p className="mb-2 text-sm font-medium text-foreground">사업자 진단:</p>
           <ul className="list-disc space-y-1 pl-5">
             <li>업종 (사업 분야)</li>
             <li>사업 소재지 (시/도 단위)</li>
             <li>직원 수 (규모 범위)</li>
             <li>연 매출 (규모 범위)</li>
-            <li>사업 시작 시기 (업력)</li>
+            <li>사업 시작 시기 (업력), 대표자 연령</li>
           </ul>
           <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-4">
             <p className="text-sm font-medium text-foreground">
@@ -142,8 +149,8 @@ const PrivacyPage = () => {
             <ul className="space-y-1 text-sm">
               <li>
                 이메일:{' '}
-                <a href="mailto:privacy@grantmatch.kr" className="font-medium text-primary hover:underline">
-                  privacy@grantmatch.kr
+                <a href="mailto:privacy@gogov.co.kr" className="font-medium text-primary hover:underline">
+                  privacy@gogov.co.kr
                 </a>
               </li>
             </ul>

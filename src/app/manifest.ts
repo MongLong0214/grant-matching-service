@@ -2,23 +2,23 @@ import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Grant Match - 정부지원금 자동 매칭',
-    short_name: 'Grant Match',
+    name: '혜택찾기 - 나에게 맞는 정부 혜택 찾기',
+    short_name: '혜택찾기',
     description:
-      '사업 정보만 입력하면 받을 수 있는 정부지원금을 30초 만에 무료로 찾아드립니다',
+      '6,000개 이상의 정부 지원사업 중 나에게 맞는 혜택을 30초 만에 무료로 찾아드립니다',
     start_url: '/',
     display: 'standalone',
     background_color: '#ffffff',
     theme_color: '#10b981',
     icons: [
       {
-        src: '/icon-192.png',
-        sizes: '192x192',
+        src: '/icon',
+        sizes: '32x32',
         type: 'image/png',
       },
       {
-        src: '/icon-512.png',
-        sizes: '512x512',
+        src: '/apple-icon',
+        sizes: '180x180',
         type: 'image/png',
       },
     ],

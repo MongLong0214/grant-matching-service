@@ -27,12 +27,13 @@ async function main() {
     { name: 'K-Startup', fn: async () => { const { syncKStartup } = await import('../src/lib/fetchers/kstartup'); return syncKStartup() } },
     { name: 'Bokjiro Central', fn: async () => { const { syncBokjiroCentral } = await import('../src/lib/fetchers/bokjiro-central'); return syncBokjiroCentral() } },
     { name: 'Bokjiro Local', fn: async () => { const { syncBokjiroLocal } = await import('../src/lib/fetchers/bokjiro-local'); return syncBokjiroLocal() } },
-    { name: 'Bizinfo RSS', fn: async () => { const { syncBizinfoRss } = await import('../src/lib/fetchers/bizinfo-rss'); return syncBizinfoRss() } },
     { name: 'Subsidy24', fn: async () => { const { syncSubsidy24 } = await import('../src/lib/fetchers/subsidy24'); return syncSubsidy24() } },
-    { name: 'SME Venture24', fn: async () => { const { syncSmeVenture24 } = await import('../src/lib/fetchers/sme-venture24'); return syncSmeVenture24() } },
     { name: 'MSIT R&D', fn: async () => { const { syncMsitRnd } = await import('../src/lib/fetchers/msit-rnd'); return syncMsitRnd() } },
-    { name: 'Youth Policy', fn: async () => { const { syncYouthPolicy } = await import('../src/lib/fetchers/youth-policy'); return syncYouthPolicy() } },
-    { name: 'KOCCA', fn: async () => { const { syncKocca } = await import('../src/lib/fetchers/kocca'); return syncKocca() } },
+    { name: 'Small Loan Finance', fn: async () => { const { syncSmallLoanFinance } = await import('../src/lib/fetchers/small-loan-finance'); return syncSmallLoanFinance() } },
+    { name: 'Loan Comparison', fn: async () => { const { syncLoanComparison } = await import('../src/lib/fetchers/loan-comparison'); return syncLoanComparison() } },
+    { name: 'SME Biz Announcement', fn: async () => { const { syncSmeBizAnnouncement } = await import('../src/lib/fetchers/sme-biz-announcement'); return syncSmeBizAnnouncement() } },
+    { name: 'Bizinfo Odcloud', fn: async () => { const { syncBizinfoOdcloud } = await import('../src/lib/fetchers/bizinfo-odcloud'); return syncBizinfoOdcloud() } },
+    { name: 'Social Finance', fn: async () => { const { syncSocialFinance } = await import('../src/lib/fetchers/social-finance'); return syncSocialFinance() } },
   ]
 
   const results: Record<string, unknown> = {}

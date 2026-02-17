@@ -1,0 +1,219 @@
+{
+  "timestamp": "2026-02-16T13:15:19.526Z",
+  "totalRecords": 6364,
+  "sourceStats": [
+    {
+      "source": "subsidy24",
+      "count": 5000,
+      "avgEligTextLen": 31,
+      "avgPrefTextLen": 21,
+      "avgConfidence": null,
+      "dimensionFillRate": {
+        "target_regions": 0.9,
+        "target_age": 25.1,
+        "target_household_types": 8.6,
+        "target_income_levels": 9.9,
+        "target_employment_status": 7.6,
+        "benefit_categories": 48.5,
+        "target_business_types": 27.9,
+        "target_employee": 2.7,
+        "target_revenue": 1.8,
+        "target_business_age": 1
+      },
+      "missedExtractions": {
+        "target_regions": {
+          "hasText": 44,
+          "dbNull": 2,
+          "missRate": 4.5
+        },
+        "target_age": {
+          "hasText": 977,
+          "dbNull": 35,
+          "missRate": 3.6
+        },
+        "target_household_types": {
+          "hasText": 430,
+          "dbNull": 33,
+          "missRate": 7.7
+        },
+        "target_income_levels": {
+          "hasText": 512,
+          "dbNull": 17,
+          "missRate": 3.3
+        },
+        "target_employment_status": {
+          "hasText": 354,
+          "dbNull": 26,
+          "missRate": 7.3
+        },
+        "benefit_categories": {
+          "hasText": 1297,
+          "dbNull": 87,
+          "missRate": 6.7
+        },
+        "target_business_types": {
+          "hasText": 229,
+          "dbNull": 80,
+          "missRate": 34.9
+        },
+        "target_employee": {
+          "hasText": 39,
+          "dbNull": 0,
+          "missRate": 0
+        },
+        "target_revenue": {
+          "hasText": 23,
+          "dbNull": 18,
+          "missRate": 78.3
+        },
+        "target_business_age": {
+          "hasText": 64,
+          "dbNull": 40,
+          "missRate": 62.5
+        }
+      }
+    },
+    {
+      "source": "bokjiro-central",
+      "count": 1000,
+      "avgEligTextLen": 44,
+      "avgPrefTextLen": 3,
+      "avgConfidence": null,
+      "dimensionFillRate": {
+        "target_regions": 2.1,
+        "target_age": 22.1,
+        "target_household_types": 15.7,
+        "target_income_levels": 18.5,
+        "target_employment_status": 2.7,
+        "benefit_categories": 51.7,
+        "target_business_types": 30,
+        "target_employee": 0.7,
+        "target_revenue": 0.6,
+        "target_business_age": 0
+      },
+      "missedExtractions": {
+        "target_regions": {
+          "hasText": 21,
+          "dbNull": 0,
+          "missRate": 0
+        },
+        "target_age": {
+          "hasText": 235,
+          "dbNull": 46,
+          "missRate": 19.6
+        },
+        "target_household_types": {
+          "hasText": 201,
+          "dbNull": 47,
+          "missRate": 23.4
+        },
+        "target_income_levels": {
+          "hasText": 214,
+          "dbNull": 29,
+          "missRate": 13.6
+        },
+        "target_employment_status": {
+          "hasText": 37,
+          "dbNull": 13,
+          "missRate": 35.1
+        },
+        "benefit_categories": {
+          "hasText": 437,
+          "dbNull": 59,
+          "missRate": 13.5
+        },
+        "target_business_types": {
+          "hasText": 21,
+          "dbNull": 4,
+          "missRate": 19
+        },
+        "target_employee": {
+          "hasText": 1,
+          "dbNull": 0,
+          "missRate": 0
+        },
+        "target_revenue": {
+          "hasText": 0,
+          "dbNull": 0,
+          "missRate": 0
+        },
+        "target_business_age": {
+          "hasText": 0,
+          "dbNull": 0,
+          "missRate": 0
+        }
+      }
+    },
+    {
+      "source": "msit-rnd",
+      "count": 364,
+      "avgEligTextLen": 37,
+      "avgPrefTextLen": 0,
+      "avgConfidence": null,
+      "dimensionFillRate": {
+        "target_regions": 0,
+        "target_age": 0,
+        "target_household_types": 0,
+        "target_income_levels": 0,
+        "target_employment_status": 0,
+        "benefit_categories": 0,
+        "target_business_types": 61,
+        "target_employee": 1.1,
+        "target_revenue": 1.1,
+        "target_business_age": 0
+      },
+      "missedExtractions": {
+        "target_regions": {
+          "hasText": 0,
+          "dbNull": 0,
+          "missRate": 0
+        },
+        "target_age": {
+          "hasText": 1,
+          "dbNull": 1,
+          "missRate": 100
+        },
+        "target_household_types": {
+          "hasText": 0,
+          "dbNull": 0,
+          "missRate": 0
+        },
+        "target_income_levels": {
+          "hasText": 0,
+          "dbNull": 0,
+          "missRate": 0
+        },
+        "target_employment_status": {
+          "hasText": 9,
+          "dbNull": 9,
+          "missRate": 100
+        },
+        "benefit_categories": {
+          "hasText": 23,
+          "dbNull": 23,
+          "missRate": 100
+        },
+        "target_business_types": {
+          "hasText": 14,
+          "dbNull": 4,
+          "missRate": 28.6
+        },
+        "target_employee": {
+          "hasText": 0,
+          "dbNull": 0,
+          "missRate": 0
+        },
+        "target_revenue": {
+          "hasText": 0,
+          "dbNull": 0,
+          "missRate": 0
+        },
+        "target_business_age": {
+          "hasText": 0,
+          "dbNull": 0,
+          "missRate": 0
+        }
+      }
+    }
+  ]
+}

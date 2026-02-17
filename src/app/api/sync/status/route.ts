@@ -14,24 +14,24 @@ export async function GET(request: NextRequest) {
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
     const supabase = createClient(supabaseUrl, serviceKey)
 
-    // Get latest sync logs per source
+    // 소스별 최근 동기화 로그 조회
     const { data: logs } = await supabase
       .from('sync_logs')
       .select('*')
       .order('started_at', { ascending: false })
       .limit(20)
 
-    // Get all cursors
+    // 전체 커서 조회
     const { data: cursors } = await supabase
       .from('sync_cursors')
       .select('*')
 
-    // Get support counts by source
+    // 소스별 지원사업 건수 조회
     const { data: counts } = await supabase
       .rpc('get_support_counts_by_source')
       .select('*')
 
-    // Fallback: manual count if RPC doesn't exist
+    // RPC 미존재 시 수동 카운트 폴백
     let sourceCounts = counts
     if (!sourceCounts) {
       const { data: allSupports } = await supabase

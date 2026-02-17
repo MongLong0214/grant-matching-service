@@ -44,11 +44,11 @@ export interface ExtractionConfidence {
 }
 
 /** 지역 오탐 방지: 대학교/기관명에 포함된 지역명이 지역으로 추출되는 것을 방지 */
-const REGION_FALSE_POSITIVES = /서울대학교|서울과학기술대학교|서울시립대학교|서울교육대학교|부산대학교|부산교육대학교|경북대학교|전남대학교|충남대학교|충북대학교|강원대학교|인천대학교|인천교육대학교|대구대학교|대구교육대학교|대전대학교|제주대학교|경인교육대학교|광주과학기술원|대구경북과학기술원|울산과학기술원/g
+const REGION_FALSE_POSITIVES = /서울대학교|서울과학기술대학교|서울시립대학교|서울교육대학교|부산대학교|부산교육대학교|경북대학교|전남대학교|충남대학교|충북대학교|강원대학교|인천대학교|인천교육대학교|대구대학교|대구교육대학교|대전대학교|제주대학교|경인교육대학교|광주과학기술원|대구경북과학기술원|울산과학기술원/
 
 /** 추출 결과 후처리 검증 — 비현실적 값 제거 */
 function validateExtraction(result: ExtractionResult, rawText: string): ExtractionResult {
-  let { regions, employeeMin, employeeMax, revenueMin, revenueMax, businessAgeMinMonths, businessAgeMaxMonths, founderAgeMin, founderAgeMax } = result
+  let { regions, employeeMin, employeeMax, revenueMin, revenueMax, businessAgeMinMonths, businessAgeMaxMonths, founderAgeMin, founderAgeMax, ageMin, ageMax } = result
 
   // 기관명 오탐 방지: 원문에 대학교 등이 있으면 해당 지역 제거
   if (REGION_FALSE_POSITIVES.test(rawText)) {
@@ -69,6 +69,9 @@ function validateExtraction(result: ExtractionResult, rawText: string): Extracti
   if (founderAgeMin !== null && founderAgeMax !== null && founderAgeMin > founderAgeMax) {
     [founderAgeMin, founderAgeMax] = [founderAgeMax, founderAgeMin]
   }
+  if (ageMin !== null && ageMax !== null && ageMin > ageMax) {
+    [ageMin, ageMax] = [ageMax, ageMin]
+  }
 
   // 비현실적 값 무효화
   if (employeeMin !== null && (employeeMin < 0 || employeeMin > 100_000)) employeeMin = null
@@ -79,6 +82,8 @@ function validateExtraction(result: ExtractionResult, rawText: string): Extracti
   if (businessAgeMaxMonths !== null && (businessAgeMaxMonths < 0 || businessAgeMaxMonths > 600)) businessAgeMaxMonths = null
   if (founderAgeMin !== null && (founderAgeMin < 15 || founderAgeMin > 100)) founderAgeMin = null
   if (founderAgeMax !== null && (founderAgeMax < 15 || founderAgeMax > 100)) founderAgeMax = null
+  if (ageMin !== null && (ageMin < 0 || ageMin > 130)) ageMin = null
+  if (ageMax !== null && (ageMax < 0 || ageMax > 130)) ageMax = null
 
   return {
     ...result,
@@ -91,6 +96,8 @@ function validateExtraction(result: ExtractionResult, rawText: string): Extracti
     businessAgeMaxMonths,
     founderAgeMin,
     founderAgeMax,
+    ageMin,
+    ageMax,
     confidence: {
       regions: regions.length > 0 ? 0.9 : 0.1,
       businessTypes: result.businessTypes.length > 0 ? 0.7 : 0.1,
@@ -98,7 +105,7 @@ function validateExtraction(result: ExtractionResult, rawText: string): Extracti
       revenue: (revenueMin !== null || revenueMax !== null) ? 0.8 : 0.1,
       businessAge: (businessAgeMinMonths !== null || businessAgeMaxMonths !== null) ? 0.85 : 0.1,
       founderAge: (founderAgeMin !== null || founderAgeMax !== null) ? 0.8 : 0.1,
-      age: (result.ageMin !== null || result.ageMax !== null) ? 0.85 : 0.1,
+      age: (ageMin !== null || ageMax !== null) ? 0.85 : 0.1,
       householdTypes: result.householdTypes.length > 0 ? 0.8 : 0.1,
       incomeLevels: result.incomeLevels.length > 0 ? 0.8 : 0.1,
       employmentStatus: result.employmentStatus.length > 0 ? 0.75 : 0.1,
@@ -114,8 +121,10 @@ function validateExtraction(result: ExtractionResult, rawText: string): Extracti
  */
 export function extractEligibility(texts: string[], title?: string): ExtractionResult {
   const combined = texts.filter(Boolean).join(' ')
+  // 제목도 지역/카테고리 추출에 포함 (시/군/구명이 제목에만 있는 경우가 많음)
+  const withTitle = title ? `${title} ${combined}` : combined
 
-  const regions = extractRegions(combined)
+  const regions = extractRegions(withTitle)
   const businessTypes = extractBusinessTypes(combined)
   const { employeeMin, employeeMax } = extractEmployeeRange(combined)
   const { revenueMin, revenueMax } = extractRevenueRange(combined)
@@ -150,7 +159,7 @@ export function extractEligibility(texts: string[], title?: string): ExtractionR
     confidence: {} as ExtractionConfidence,
   }
 
-  return validateExtraction(raw, combined)
+  return validateExtraction(raw, withTitle)
 }
 
 export { extractRegions, CTPV_TO_REGION } from './region-dictionary'

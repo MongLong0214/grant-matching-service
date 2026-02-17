@@ -1,80 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 import { extractEligibility } from '@/lib/extraction'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
+import { type MsitRndItem, parseXmlResponse, parseDate, mapCategory } from './msit-rnd-parser'
 
 // 과학기술정보통신부_사업공고
 const MSIT_RND_API_URL = 'https://apis.data.go.kr/1721000/msitannouncementinfo/businessAnnouncMentList'
-
-interface MsitRndItem {
-  subject: string          // 사업공고명 (title)
-  deptName?: string        // 부서명
-  pressDt?: string         // 게시일 (yyyy-MM-dd or yyyyMMdd)
-  managerTel?: string      // 담당자 연락처
-  viewUrl?: string         // 상세 URL
-  files?: string           // 첨부파일
-}
-
-// XML 응답에서 item 목록과 totalCount를 파싱
-function parseXmlResponse(xmlText: string): { items: MsitRndItem[], totalCount: number } {
-  const items: MsitRndItem[] = []
-
-  // totalCount 추출
-  const totalCountMatch = xmlText.match(/<totalCount>(\d+)<\/totalCount>/)
-  const totalCount = totalCountMatch ? parseInt(totalCountMatch[1], 10) : 0
-
-  // resultCode 확인 (에러 응답 감지)
-  const resultCodeMatch = xmlText.match(/<resultCode>(\d+)<\/resultCode>/)
-  if (resultCodeMatch && resultCodeMatch[1] !== '00') {
-    const msgMatch = xmlText.match(/<resultMsg>(.*?)<\/resultMsg>/)
-    throw new Error(`MSIT R&D API resultCode: ${resultCodeMatch[1]} - ${msgMatch?.[1] || 'Unknown'}`)
-  }
-
-  const itemRegex = /<item>([\s\S]*?)<\/item>/g
-  let match
-
-  while ((match = itemRegex.exec(xmlText)) !== null) {
-    const block = match[1]
-    const get = (tag: string): string => {
-      const m = block.match(new RegExp(`<${tag}>(?:<!\\[CDATA\\[)?(.*?)(?:\\]\\]>)?</${tag}>`))
-      return m ? m[1].trim() : ''
-    }
-    items.push({
-      subject: get('subject'),
-      deptName: get('deptName') || undefined,
-      pressDt: get('pressDt') || undefined,
-      managerTel: get('managerTel') || undefined,
-      viewUrl: get('viewUrl') || undefined,
-      files: get('files') || undefined,
-    })
-  }
-
-  return { items, totalCount }
-}
-
-function parseDate(dateStr?: string): string | null {
-  if (!dateStr) return null
-  // yyyy-MM-dd 형식이면 그대로
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr
-  // yyyyMMdd 형식
-  const cleaned = dateStr.replace(/[^0-9]/g, '')
-  if (cleaned.length !== 8) return null
-  return `${cleaned.slice(0, 4)}-${cleaned.slice(4, 6)}-${cleaned.slice(6, 8)}`
-}
-
-function mapCategory(bizType?: string): string {
-  if (!bizType) return '기술'
-  const map: Record<string, string> = {
-    'R&D': '기술', '연구': '기술', '기술': '기술', '개발': '기술',
-    '인력': '인력', '교육': '인력', '양성': '인력',
-    '인프라': '경영', '기반': '경영',
-    '국제': '수출', '글로벌': '수출', '협력': '수출',
-    '창업': '창업',
-  }
-  for (const [keyword, category] of Object.entries(map)) {
-    if (bizType.includes(keyword)) return category
-  }
-  return '기술'
-}
 
 export async function syncMsitRnd(): Promise<{
   fetched: number
@@ -83,9 +13,9 @@ export async function syncMsitRnd(): Promise<{
   skipped: number
   apiCallsUsed: number
 }> {
-  const apiKey = process.env.MSIT_RND_API_KEY
+  const apiKey = process.env.DATA_GO_KR_API_KEY
   if (!apiKey) {
-    console.log('[MSIT-RnD] MSIT_RND_API_KEY not set, skipping sync')
+    console.log('[MSIT-RnD] DATA_GO_KR_API_KEY not set, skipping sync')
     return { fetched: 0, inserted: 0, updated: 0, skipped: 0, apiCallsUsed: 0 }
   }
 
@@ -101,8 +31,7 @@ export async function syncMsitRnd(): Promise<{
   const logId = syncLog?.id
 
   let apiCallsUsed = 0
-  let inserted = 0
-  let updated = 0
+  let fetched = 0
   let skipped = 0
   const allItems: MsitRndItem[] = []
 
@@ -178,38 +107,30 @@ export async function syncMsitRnd(): Promise<{
         raw_exclusion_text: null as string | null,
         raw_preference_text: null as string | null,
         extraction_confidence: extraction.confidence,
+        service_type: 'business',
       }
 
-      const { data: existing } = await supabase
+      const { error } = await supabase
         .from('supports')
-        .select('id')
-        .eq('external_id', externalId)
-        .maybeSingle()
+        .upsert(record, { onConflict: 'external_id' })
 
-      if (existing) {
-        const { error } = await supabase.from('supports').update(record).eq('external_id', externalId)
-        if (error) { skipped++; continue }
-        updated++
-      } else {
-        const { error } = await supabase.from('supports').insert(record)
-        if (error) { skipped++; continue }
-        inserted++
-      }
+      if (error) { skipped++; continue }
+      fetched++
     }
 
     if (logId) {
       await supabase.from('sync_logs').update({
         status: 'completed',
         completed_at: new Date().toISOString(),
-        programs_fetched: allItems.length,
-        programs_inserted: inserted,
-        programs_updated: updated,
+        programs_fetched: fetched,
+        programs_inserted: 0,
+        programs_updated: 0,
         programs_skipped: skipped,
         api_calls_used: apiCallsUsed,
       }).eq('id', logId)
     }
 
-    return { fetched: allItems.length, inserted, updated, skipped, apiCallsUsed }
+    return { fetched, inserted: 0, updated: 0, skipped, apiCallsUsed }
   } catch (error) {
     if (logId) {
       await supabase.from('sync_logs').update({

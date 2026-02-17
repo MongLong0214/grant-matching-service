@@ -1,14 +1,13 @@
 import { ImageResponse } from 'next/og'
 
-export const runtime = 'edge'
-export const alt = 'Grant Match - 정부지원금 자동 매칭'
+export const alt = '혜택찾기 - 나에게 맞는 정부 혜택 찾기'
 export const size = {
   width: 1200,
   height: 630,
 }
 export const contentType = 'image/png'
 
-export default async function OGImage() {
+export default function OGImage() {
   return new ImageResponse(
     (
       <div
@@ -24,7 +23,7 @@ export default async function OGImage() {
           fontFamily: 'sans-serif',
         }}
       >
-        {/* Logo area */}
+        {/* Logo */}
         <div
           style={{
             display: 'flex',
@@ -44,19 +43,19 @@ export default async function OGImage() {
               justifyContent: 'center',
               color: 'white',
               fontSize: 36,
-              fontWeight: 700,
+              fontWeight: 800,
             }}
           >
-            G
+            혜
           </div>
           <span
             style={{ fontSize: 40, fontWeight: 700, color: '#1f2937' }}
           >
-            Grant Match
+            혜택찾기
           </span>
         </div>
 
-        {/* Main title */}
+        {/* Title */}
         <div
           style={{
             fontSize: 56,
@@ -67,7 +66,7 @@ export default async function OGImage() {
             marginBottom: 20,
           }}
         >
-          사업자를 위한 정부지원금,
+          나에게 맞는 정부 혜택,
         </div>
         <div
           style={{
@@ -92,7 +91,19 @@ export default async function OGImage() {
             textAlign: 'center',
           }}
         >
-          95,000개 이상의 지원사업 데이터 · 무료 · 회원가입 불필요
+          6,000개 이상의 정부 지원사업 · 무료 · 회원가입 불필요
+        </div>
+
+        {/* Domain */}
+        <div
+          style={{
+            fontSize: 20,
+            color: '#059669',
+            marginTop: 24,
+            fontWeight: 600,
+          }}
+        >
+          gogov.co.kr
         </div>
       </div>
     ),

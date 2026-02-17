@@ -28,6 +28,7 @@ const AGE_KEYWORD_MAP: Record<string, AgeRange> = {
   '어르신': { min: 65, max: null },
   '임산부': { min: 15, max: 49 },
   '신생아': { min: 0, max: 1 },
+  '고령': { min: 65, max: null },
 }
 
 /** "만 19~34세", "만 19세 이상 34세 이하" 등 패턴 */
@@ -104,8 +105,8 @@ const HOUSEHOLD_PATTERNS: [RegExp, string][] = [
   [/영유아\s*(가구|가정|자녀)/, '영유아'],
   [/다자녀|다\s*자녀\s*가구|3자녀|셋째/, '다자녀'],
   [/한부모|한\s*부모\s*가(구|정)|조손\s*가(구|정)/, '한부모'],
-  [/다문화\s*가(구|정)/, '다문화'],
-  [/장애인\s*가(구|정)/, '장애인'],
+  [/다문화/, '다문화'],
+  [/장애인/, '장애인'],
   [/임산부|임신/, '임산부'],
   [/소년소녀\s*가(장|정)/, '소년소녀가장'],
 ]
@@ -130,7 +131,7 @@ export function extractIncomeLevels(text: string): string[] {
   const result: string[] = []
 
   // 기초생활/차상위 키워드
-  if (/기초생활\s*수급/.test(text) && !result.includes('기초생활')) {
+  if (/기초생활\s*(보장)?\s*수급|국민기초생활/.test(text) && !result.includes('기초생활')) {
     result.push('기초생활')
   }
   if (/차상위/.test(text) && !result.includes('차상위')) {

@@ -29,10 +29,12 @@ export const MULTI_MAP_KEYWORDS: Record<string, string[]> = {
   '중소벤처기업': [],
   '소기업': [],
   '영세기업': ['음식점업', '소매업', '기타서비스업'],
+  '중소중견기업': [],
+  '강소기업': [],
 }
 
 export function extractBusinessTypes(text: string): string[] {
-  if (/업종\s*(제한|무관)\s*없|모든\s*업종|전\s*업종/.test(text)) {
+  if (/업종\s*(?:제한\s*없|무관)|모든\s*업종|전\s*업종/.test(text)) {
     return []
   }
 

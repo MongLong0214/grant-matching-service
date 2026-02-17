@@ -45,8 +45,8 @@ export function Combobox({
           aria-describedby={ariaDescribedby}
           onBlur={onBlur}
           className={cn(
-            'flex h-12 w-full items-center justify-between rounded-xl border border-border bg-muted px-4 text-base transition-colors',
-            'hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+            'flex h-12 w-full items-center justify-between rounded-xl border border-input bg-muted px-4 text-base transition-all duration-200',
+            'hover:bg-accent hover:border-primary/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             !value && 'text-muted-foreground'
           )}
         >

@@ -28,10 +28,13 @@ export default async function ResultPage({ params }: ResultPageProps) {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
   if (!uuidRegex.test(id)) {
     return (
-      <div className="mx-auto max-w-[960px] px-4 py-12 text-center">
+      <div className="mx-auto max-w-[480px] px-4 py-20 text-center">
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+          <span className="text-2xl" aria-hidden="true">!</span>
+        </div>
         <h1 className="mb-2 text-2xl font-bold text-foreground">잘못된 접근입니다</h1>
-        <p className="mb-6 text-muted-foreground">유효하지 않은 진단 ID입니다.</p>
-        <Button asChild>
+        <p className="mb-8 text-muted-foreground">유효하지 않은 진단 ID입니다.</p>
+        <Button asChild className="rounded-lg">
           <Link href="/diagnose">진단하기</Link>
         </Button>
       </div>
@@ -42,13 +45,16 @@ export default async function ResultPage({ params }: ResultPageProps) {
 
   if (!diagnosis) {
     return (
-      <div className="mx-auto max-w-[960px] px-4 py-20 text-center">
+      <div className="mx-auto max-w-[480px] px-4 py-20 text-center">
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+          <RotateCcw className="h-7 w-7 text-muted-foreground" aria-hidden="true" />
+        </div>
         <h1 className="text-2xl font-bold text-foreground">결과를 찾을 수 없습니다</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           유효하지 않은 진단 ID이거나 결과가 만료되었습니다.
         </p>
-        <div className="mt-6">
-          <Button asChild>
+        <div className="mt-8">
+          <Button asChild className="rounded-lg">
             <Link href="/diagnose">다시 진단하기</Link>
           </Button>
         </div>
@@ -101,14 +107,15 @@ export default async function ResultPage({ params }: ResultPageProps) {
   const exploratoryCount = scores.filter((s) => normalizeTier(s.tier) === 'exploratory').length
 
   return (
-    <div className="mx-auto max-w-[960px] px-4 py-10">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-foreground">
+    <div className="mx-auto max-w-[960px] px-4 py-10 sm:py-14">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-foreground sm:text-4xl">
           {userType === 'personal' ? '맞춤 혜택 결과' : '맞춤 지원금 결과'}
         </h1>
         {supports.length > 0 && (
-          <div className="flex items-center gap-2">
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">총 {scores.length}개 발견</span>
+            <span className="text-muted-foreground/40">·</span>
             {tailoredCount > 0 && (
               <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-900 dark:text-emerald-200">
                 맞춤 {tailoredCount}
@@ -128,11 +135,10 @@ export default async function ResultPage({ params }: ResultPageProps) {
         )}
       </div>
 
-      {/* Summary Card */}
-      <div className="mb-10 rounded-xl border bg-card p-6 shadow-sm">
-        <p className="mb-2 text-sm text-muted-foreground">현재 적용된 검색 조건</p>
-        <div className="flex items-center justify-between">
-          <p className="font-bold text-foreground">
+      <div className="mb-10 rounded-xl border border-border/60 bg-card p-5 shadow-sm sm:p-6">
+        <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">적용된 검색 조건</p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-semibold text-foreground sm:text-base">
             {userType === 'personal'
               ? `${diagnosis.ageGroup ?? ''} · ${diagnosis.region} · ${diagnosis.householdType ?? ''} · ${diagnosis.incomeLevel ?? ''}`
               : `${diagnosis.businessType} · ${diagnosis.region} · 직원 ${diagnosis.employeeCount}명 · 업력 ${getBusinessAgeLabel(diagnosis.businessAge ?? 0)}`
@@ -140,34 +146,32 @@ export default async function ResultPage({ params }: ResultPageProps) {
           </p>
           <Link
             href={`/diagnose?type=${userType}`}
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary transition-colors duration-200 hover:text-primary/80"
           >
-            <Pencil className="h-4 w-4" />
-            조건 수정하기
+            <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+            조건 수정
           </Link>
         </div>
       </div>
 
-      {/* Support List */}
       <SupportList
         supports={supports}
         scoredSupports={scoredSupports}
         userType={userType}
       />
 
-      {/* Bottom Actions */}
-      <div className="mt-10 flex flex-col items-center gap-4">
+      <div className="mt-12 flex flex-col items-center gap-4 border-t border-border/50 pt-10">
         <Button
           asChild
-          className="rounded-full bg-primary/10 text-primary hover:bg-primary/20"
+          className="rounded-xl bg-primary/10 px-6 text-primary shadow-sm transition-all duration-200 hover:bg-primary/20 hover:shadow-md"
           variant="secondary"
         >
           <Link href="/diagnose" className="inline-flex items-center gap-2">
-            <RotateCcw className="h-4 w-4" />
+            <RotateCcw className="h-4 w-4" aria-hidden="true" />
             다른 조건으로 다시 진단하기
           </Link>
         </Button>
-        <Link href="/" className="text-sm text-muted-foreground hover:underline">
+        <Link href="/" className="text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground">
           홈으로 돌아가기
         </Link>
       </div>

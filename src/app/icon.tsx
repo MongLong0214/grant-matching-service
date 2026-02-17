@@ -11,7 +11,7 @@ export default function Icon() {
     (
       <div
         style={{
-          fontSize: 20,
+          fontSize: 18,
           background: 'linear-gradient(135deg, #10b981, #059669)',
           width: '100%',
           height: '100%',
@@ -20,10 +20,11 @@ export default function Icon() {
           justifyContent: 'center',
           borderRadius: 6,
           color: 'white',
-          fontWeight: 700,
+          fontWeight: 800,
+          letterSpacing: '-0.5px',
         }}
       >
-        G
+        혜
       </div>
     ),
     { ...size }

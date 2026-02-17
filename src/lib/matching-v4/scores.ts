@@ -35,7 +35,9 @@ export function scoreRange(min: number | null, max: number | null, userValue: nu
       if (userValue < min) return Math.max(0, 1 - (min - userValue) / range)
       if (userValue > max) return Math.max(0, 1 - (userValue - max) / range)
     }
-    return 0.0
+    // min === max: fallbackDenom으로 점진 감소
+    const dist = Math.abs(userValue - min)
+    return Math.max(0, 1 - dist / fallbackDenom)
   }
   if (max !== null) {
     if (userValue <= max) return 1.0

@@ -117,8 +117,6 @@ export const INTEREST_CATEGORY_OPTIONS = [
   { label: '문화 / 여가', value: '문화' },
 ] as const
 
-export const FREE_PREVIEW_COUNT = 3
-
 /** 카테고리별 뱃지 색상 매핑 (light + dark safe) */
 export const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
   "금융": { bg: "bg-emerald-100 dark:bg-emerald-900/40", text: "text-emerald-700 dark:text-emerald-300" },

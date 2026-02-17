@@ -47,7 +47,7 @@ export function getBusinessDimensions(support: Support, input: DiagnoseFormData)
     { key: 'businessType', weight: BUSINESS_WEIGHTS.businessType, isSpecific: true,
       hasData: hasArr(types, c?.businessTypes ?? 0), confidence: c?.businessTypes ?? 0,
       rawScore: types && types.length > 0 ? scoreBusinessType(types, input.businessType) : 0 },
-    { key: 'employee', weight: BUSINESS_WEIGHTS.employee, isSpecific: false,
+    { key: 'employee', weight: BUSINESS_WEIGHTS.employee, isSpecific: true,
       hasData: hasRange(support.targetEmployeeMin, support.targetEmployeeMax, c?.employee ?? 0), confidence: c?.employee ?? 0,
       rawScore: support.targetEmployeeMin !== null || support.targetEmployeeMax !== null
         ? scoreRange(support.targetEmployeeMin, support.targetEmployeeMax, input.employeeCount, 10) : 0 },
@@ -55,7 +55,7 @@ export function getBusinessDimensions(support: Support, input: DiagnoseFormData)
       hasData: hasRange(support.targetRevenueMin, support.targetRevenueMax, c?.revenue ?? 0), confidence: c?.revenue ?? 0,
       rawScore: support.targetRevenueMin !== null || support.targetRevenueMax !== null
         ? scoreRange(support.targetRevenueMin, support.targetRevenueMax, input.annualRevenue, 100_000_000) : 0 },
-    { key: 'businessAge', weight: BUSINESS_WEIGHTS.businessAge, isSpecific: false,
+    { key: 'businessAge', weight: BUSINESS_WEIGHTS.businessAge, isSpecific: true,
       hasData: hasRange(support.targetBusinessAgeMin, support.targetBusinessAgeMax, c?.businessAge ?? 0), confidence: c?.businessAge ?? 0,
       rawScore: support.targetBusinessAgeMin !== null || support.targetBusinessAgeMax !== null
         ? scoreBusinessAge(support.targetBusinessAgeMin, support.targetBusinessAgeMax, input.businessAge) : 0 },
@@ -94,7 +94,8 @@ export function getPersonalDimensions(support: Support, input: PersonalFormData)
 export function isKnockedOutBusiness(support: Support, input: DiagnoseFormData): boolean {
   const c = (support.extractionConfidence ?? null) as ExtractionConfidence | null
   const regions = support.targetRegions
-  if (regions && regions.length > 0 && (c?.regions ?? 0) >= 0.7) {
+  // 지역 명시 + 사용자 미포함 → 적극 knockout (conf 0.5 이상이면 충분)
+  if (regions && regions.length > 0 && (c?.regions ?? 0) >= 0.5) {
     if (!regions.includes(input.region)) return true
   }
   const types = support.targetBusinessTypes
@@ -116,7 +117,8 @@ export function isKnockedOutBusiness(support: Support, input: DiagnoseFormData):
 export function isKnockedOutPersonal(support: Support, input: PersonalFormData): boolean {
   const c = (support.extractionConfidence ?? null) as ExtractionConfidence | null
   const regions = support.targetRegions
-  if (regions && regions.length > 0 && (c?.regions ?? 0) >= 0.7) {
+  // 지역 명시 + 사용자 미포함 → 적극 knockout (conf 0.5 이상이면 충분)
+  if (regions && regions.length > 0 && (c?.regions ?? 0) >= 0.5) {
     if (!regions.includes(input.region)) return true
   }
   const userAge = AGE_GROUP_TO_VALUE[input.ageGroup]
@@ -125,17 +127,19 @@ export function isKnockedOutPersonal(support: Support, input: PersonalFormData):
     if (support.targetAgeMin != null && userAge < support.targetAgeMin - 5) return true
   }
   const hTypes = support.targetHouseholdTypes
-  if (hTypes && hTypes.length > 0 && (c?.householdTypes ?? 0) >= 0.7) {
+  if (hTypes && hTypes.length > 0 && (c?.householdTypes ?? 0) >= 0.5) {
     if (!hTypes.includes(input.householdType)) return true
   }
   const iLevels = support.targetIncomeLevels
-  if (iLevels && iLevels.length > 0 && (c?.incomeLevels ?? 0) >= 0.7) {
+  if (iLevels && iLevels.length > 0 && (c?.incomeLevels ?? 0) >= 0.5) {
     const userIdx = INCOME_ORDER.indexOf(input.incomeLevel)
-    const maxTargetIdx = Math.max(...iLevels.map(l => INCOME_ORDER.indexOf(l)).filter(i => i !== -1))
-    if (userIdx !== -1 && maxTargetIdx !== -1 && userIdx > maxTargetIdx + 1) return true
+    const validIndices = iLevels.map(l => INCOME_ORDER.indexOf(l)).filter(i => i !== -1)
+    if (validIndices.length === 0) return false
+    const maxTargetIdx = Math.max(...validIndices)
+    if (userIdx !== -1 && userIdx > maxTargetIdx + 1) return true
   }
   const eStatus = support.targetEmploymentStatus
-  if (eStatus && eStatus.length > 0 && (c?.employmentStatus ?? 0) >= 0.7) {
+  if (eStatus && eStatus.length > 0 && (c?.employmentStatus ?? 0) >= 0.5) {
     if (!eStatus.includes(input.employmentStatus)) return true
   }
   return false

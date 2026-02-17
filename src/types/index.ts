@@ -56,12 +56,11 @@ export interface Support {
 }
 
 export type MatchTier = 'exact' | 'likely' | 'related'
-export type MatchTierV3 = 'tailored' | 'recommended' | 'exploratory'
 
 export interface MatchedScore {
   supportId: string
   score: number
-  tier: MatchTier | MatchTierV3 | string
+  tier: MatchTier | string
   breakdown: {
     region: number
     businessType?: number
@@ -90,15 +89,6 @@ export interface MatchedScore {
   }
 }
 
-export interface MatchResultV3 {
-  tailored: MatchedScore[]
-  recommended: MatchedScore[]
-  exploratory: MatchedScore[]
-  all: MatchedScore[]
-  totalCount: number
-  totalAnalyzed: number
-  knockedOut: number
-}
 
 export interface Diagnosis {
   id: string
@@ -143,3 +133,11 @@ export interface PersonalFormData {
 export type UserInput =
   | ({ userType: 'personal' } & PersonalFormData)
   | ({ userType: 'business' } & DiagnoseFormData)
+
+export interface ScoredSupportData {
+  support: Support
+  score: number
+  tier: string
+  breakdown?: Record<string, number>
+  confidence?: number
+}

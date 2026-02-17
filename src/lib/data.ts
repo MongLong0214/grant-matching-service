@@ -1,5 +1,5 @@
-import { SEED_SUPPORTS } from '@/lib/seed-data'
-import type { Support, MatchedScore, UserInput, Diagnosis } from '@/types'
+import type { Support } from '@/types'
+export { saveDiagnosis, getDiagnosis } from '@/lib/diagnosis'
 
 const isSupabaseConfigured = () =>
   Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
@@ -10,6 +10,7 @@ const isSupabaseConfigured = () =>
  */
 export async function getActiveSupports(): Promise<Support[]> {
   if (!isSupabaseConfigured()) {
+    const { SEED_SUPPORTS } = await import('@/lib/seed-data')
     return SEED_SUPPORTS.filter((s) => s.isActive)
   }
 
@@ -18,14 +19,28 @@ export async function getActiveSupports(): Promise<Support[]> {
   const supabase = await createClient()
 
   const today = new Date().toISOString().split('T')[0]
-  const { data: rows, error } = await supabase
-    .from('supports')
-    .select('*')
-    .eq('is_active', true)
-    .or(`end_date.is.null,end_date.gte.${today}`)
 
-  if (error) throw error
-  return mapSupportRows(rows || [])
+  // Supabase 기본 1000행 제한 → 청크 로딩으로 전체 조회
+  const PAGE_SIZE = 1000
+  const allRows: unknown[] = []
+  let from = 0
+
+  while (true) {
+    const { data: rows, error } = await supabase
+      .from('supports')
+      .select('*')
+      .eq('is_active', true)
+      .or(`end_date.is.null,end_date.gte.${today}`)
+      .range(from, from + PAGE_SIZE - 1)
+
+    if (error) throw error
+    if (!rows || rows.length === 0) break
+    allRows.push(...rows)
+    if (rows.length < PAGE_SIZE) break
+    from += PAGE_SIZE
+  }
+
+  return mapSupportRows(allRows as Parameters<typeof mapSupportRows>[0])
 }
 
 /**
@@ -41,6 +56,7 @@ export async function browseSupports(options: {
   const { page = 1, perPage = 20, category, activeOnly = true } = options
 
   if (!isSupabaseConfigured()) {
+    const { SEED_SUPPORTS } = await import('@/lib/seed-data')
     let filtered = SEED_SUPPORTS.filter((s) => s.isActive)
     if (category) filtered = filtered.filter((s) => s.category === category)
     const start = (page - 1) * perPage
@@ -83,6 +99,7 @@ export async function getSupportsByIds(ids: string[]): Promise<Support[]> {
   if (ids.length === 0) return []
 
   if (!isSupabaseConfigured()) {
+    const { SEED_SUPPORTS } = await import('@/lib/seed-data')
     return SEED_SUPPORTS.filter((s) => ids.includes(s.id))
   }
 
@@ -112,128 +129,3 @@ export async function getSupportsByIds(ids: string[]): Promise<Support[]> {
   return mapSupportRows(allRows)
 }
 
-// In-memory store for dev mode diagnoses (bounded to prevent memory leaks)
-const MAX_DEV_DIAGNOSES = 1000
-const devDiagnoses = new Map<string, Diagnosis>()
-
-/**
- * 진단 결과 저장 (듀얼 트랙: 개인/사업자)
- * Supabase 미설정 시 인메모리 저장
- */
-export async function saveDiagnosis(
-  input: UserInput,
-  matchedSupports: Support[],
-  matchedScores?: MatchedScore[],
-): Promise<string> {
-  const id = crypto.randomUUID()
-  const now = new Date().toISOString()
-  const supportIds = matchedSupports.map((s) => s.id)
-
-  if (!isSupabaseConfigured()) {
-    if (devDiagnoses.size >= MAX_DEV_DIAGNOSES) {
-      const oldestKey = devDiagnoses.keys().next().value
-      if (oldestKey) devDiagnoses.delete(oldestKey)
-    }
-
-    const base: Diagnosis = {
-      id,
-      userType: input.userType,
-      businessType: null,
-      region: input.region,
-      employeeCount: null,
-      annualRevenue: null,
-      businessAge: null,
-      founderAge: null,
-      ageGroup: null,
-      gender: null,
-      householdType: null,
-      incomeLevel: null,
-      employmentStatus: null,
-      interestCategories: null,
-      matchedSupportIds: supportIds,
-      matchedCount: matchedSupports.length,
-      matchedScores: matchedScores ?? null,
-      createdAt: now,
-    }
-
-    if (input.userType === 'business') {
-      base.businessType = input.businessType
-      base.employeeCount = input.employeeCount
-      base.annualRevenue = input.annualRevenue
-      base.businessAge = input.businessAge
-      base.founderAge = input.founderAge
-    } else {
-      base.ageGroup = input.ageGroup
-      base.gender = input.gender
-      base.householdType = input.householdType
-      base.incomeLevel = input.incomeLevel
-      base.employmentStatus = input.employmentStatus
-      base.interestCategories = input.interestCategories
-    }
-
-    devDiagnoses.set(id, base)
-    return id
-  }
-
-  const { createClient } = await import('@/lib/supabase/server')
-  const supabase = await createClient()
-
-  const commonPayload = {
-    region: input.region,
-    matched_support_ids: supportIds,
-    matched_count: matchedSupports.length,
-    matched_scores: matchedScores ?? null,
-    user_type: input.userType,
-  }
-
-  const insertPayload = input.userType === 'business'
-    ? {
-        ...commonPayload,
-        business_type: input.businessType,
-        employee_count: input.employeeCount,
-        annual_revenue: input.annualRevenue,
-        business_age: input.businessAge,
-        founder_age: input.founderAge,
-      }
-    : {
-        ...commonPayload,
-        age_group: input.ageGroup,
-        gender: input.gender,
-        household_type: input.householdType,
-        income_level: input.incomeLevel,
-        employment_status: input.employmentStatus,
-        interest_categories: input.interestCategories,
-      }
-
-  const { data, error } = await supabase
-    .from('diagnoses')
-    .insert(insertPayload)
-    .select()
-    .single()
-
-  if (error) throw error
-  return data.id
-}
-
-/**
- * 진단 결과 조회 (듀얼 트랙)
- */
-export async function getDiagnosis(id: string): Promise<Diagnosis | null> {
-  if (!isSupabaseConfigured()) {
-    return devDiagnoses.get(id) ?? null
-  }
-
-  const { createClient } = await import('@/lib/supabase/server')
-  const { mapDiagnosisRow } = await import('@/lib/supabase/mappers')
-  const supabase = await createClient()
-
-  const { data, error } = await supabase
-    .from('diagnoses')
-    .select('*')
-    .eq('id', id)
-    .single()
-
-  if (error || !data) return null
-
-  return mapDiagnosisRow(data)
-}

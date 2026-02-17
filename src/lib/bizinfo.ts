@@ -9,9 +9,6 @@ import { extractEligibility } from "@/lib/extraction"
 
 type SupportInsert = Database["public"]["Tables"]["supports"]["Insert"]
 
-/**
- * Bizinfo API 응답 타입
- */
 interface BizinfoApiResponse {
   page: number
   perPage: number
@@ -21,9 +18,6 @@ interface BizinfoApiResponse {
   data: BizinfoProgram[]
 }
 
-/**
- * Bizinfo API 프로그램 데이터 타입
- */
 interface BizinfoProgram {
   번호: number
   분야: string
@@ -36,10 +30,6 @@ interface BizinfoProgram {
   상세URL: string
 }
 
-/**
- * 분야 매핑 테이블
- * API 응답의 분야를 SupportCategory로 변환
- */
 const CATEGORY_MAP: Record<string, SupportCategory> = {
   금융: "금융",
   기술: "기술",
@@ -51,17 +41,11 @@ const CATEGORY_MAP: Record<string, SupportCategory> = {
   기타: "기타",
 }
 
-/**
- * API 엔드포인트 정의
- */
 const ENDPOINTS = {
   "2025": "https://api.odcloud.kr/api/3034791/v1/uddi:fa09d13d-bce8-474e-b214-8008e79ec08f",
   "2024": "https://api.odcloud.kr/api/3034791/v1/uddi:80a74cfd-55d2-4dd3-81c7-d01567d0b3c4",
 }
 
-/**
- * 단일 페이지 데이터 가져오기
- */
 async function fetchPage(
   endpoint: string,
   apiKey: string,
@@ -82,9 +66,6 @@ async function fetchPage(
   return response.json()
 }
 
-/**
- * 특정 연도의 모든 페이지 데이터 가져오기
- */
 async function fetchYearData(
   year: "2025" | "2024",
   apiKey: string
@@ -112,10 +93,7 @@ async function fetchYearData(
   return allPrograms
 }
 
-/**
- * 모든 프로그램 데이터 가져오기 (2025 + 2024)
- * 사업명 + 소관기관 조합으로 중복 제거 (2025 우선)
- */
+// 2025 데이터 우선, 사업명+소관기관 키 기준 중복 제거
 export async function fetchAllPrograms(apiKey: string): Promise<BizinfoProgram[]> {
   console.log("[Bizinfo] Starting data fetch...")
 
@@ -148,10 +126,7 @@ export async function fetchAllPrograms(apiKey: string): Promise<BizinfoProgram[]
   return uniquePrograms
 }
 
-/**
- * Bizinfo 프로그램을 Supabase Insert 형식으로 변환
- * 사업명/소관기관/분야에서 자격 조건을 추출하여 매칭 정확도 향상
- */
+// 사업명/소관기관/분야에서 자격 조건 추출하여 매칭 정확도 향상
 export function mapToSupport(program: BizinfoProgram): SupportInsert {
   // 분야 매핑 (매핑되지 않으면 "기타"로 처리)
   const category = CATEGORY_MAP[program.분야] || "기타"

@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/api/', '/result/'],
       },
     ],
-    sitemap: 'https://grant-matching-service.vercel.app/sitemap.xml',
+    sitemap: 'https://gogov.co.kr/sitemap.xml',
   }
 }

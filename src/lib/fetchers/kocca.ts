@@ -1,3 +1,4 @@
+// 승인 대기중 — sync-runner에서 제외됨 (2026-02-17)
 // [DISABLED] 한국콘텐츠진흥원_지원사업공고
 // data.go.kr에서 LINK 유형 API로 분류되어 REST 엔드포인트가 존재하지 않음.
 // apis.data.go.kr/B551608/suptBizAnno/getSuptBizAnnoList 엔드포인트는 실제로 동작하지 않음.

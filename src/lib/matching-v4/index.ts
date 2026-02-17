@@ -27,9 +27,9 @@ export interface MatchResultV4 {
   filteredByServiceType: number
 }
 
-const TIER_THRESHOLDS = { tailored: 0.65, recommended: 0.40, exploratory: 0.20 } as const
-const TIER_CAPS = { tailored: 20, recommended: 30, exploratory: 50 } as const
-const TOTAL_CAP = 100
+const TIER_THRESHOLDS = { tailored: 0.45, recommended: 0.30, exploratory: 0.18 } as const
+const TIER_CAPS = { tailored: 20, recommended: 25, exploratory: 25 } as const
+const TOTAL_CAP = 70
 
 function getTierV4(score: number): MatchTierV4 | null {
   if (score >= TIER_THRESHOLDS.tailored) return 'tailored'
@@ -56,13 +56,21 @@ function scorePipeline(
   if (activeDims.length < 1) return null
   const specificDims = activeDims.filter(d => d.isSpecific)
   const hasSpecificMatch = specificDims.some(d => d.rawScore >= 0.8)
+  // 특정 차원이 없으면 1개 일반 차원만으로는 부족 (최소 2개 필요)
   if (specificDims.length === 0 && activeDims.length < 2) return null
+  // 하지만 1개라도 특정 차원이 있으면 진입 허용 (coverage 확대)
 
   const totalActiveWeight = activeDims.reduce((sum, d) => sum + d.weight, 0)
-  const matchScore = activeDims.reduce((sum, d) => sum + d.rawScore * d.weight, 0) / totalActiveWeight
-  const coverageFactor = 0.1 + 0.9 * (totalActiveWeight / 1.0)
+  // 신뢰도 가중: 저신뢰(< 0.6) 차원만 0.5 기본값 쪽으로 끌어당김
+  const matchScore = activeDims.reduce((sum, d) => {
+    const effective = d.confidence < 0.6
+      ? d.rawScore * d.confidence + 0.5 * (1 - d.confidence)
+      : d.rawScore
+    return sum + effective * d.weight
+  }, 0) / (totalActiveWeight || 1)
+  const coverageFactor = 0.2 + 0.8 * (totalActiveWeight / 1.0)
   let finalScore = matchScore * coverageFactor
-  if (hasInterestBonus) finalScore = Math.min(1.0, finalScore + 0.10)
+  if (hasInterestBonus) finalScore = Math.min(1.0, finalScore * 1.12)
   return { finalScore, matchScore, coverageFactor, hasSpecificMatch }
 }
 
@@ -86,7 +94,8 @@ function scoreSupport(
   if (!result) return null
   let tier = getTierV4(result.finalScore)
   if (!tier) return null
-  if (!result.hasSpecificMatch && (tier === 'tailored' || tier === 'recommended')) tier = 'exploratory'
+  // 특정 차원에서 높은 점수(0.8+)가 없으면 tailored 진입을 더 엄격하게
+  if (!result.hasSpecificMatch && tier === 'tailored' && result.finalScore < 0.60) tier = 'recommended'
 
   const breakdown: Record<string, number> = {}
   const scores: Record<string, number> = {}
@@ -97,7 +106,7 @@ function scoreSupport(
   const activeDims = dims.filter(d => d.hasData)
   const totalWeight = activeDims.reduce((sum, d) => sum + d.weight, 0)
   const confidence = activeDims.length > 0
-    ? activeDims.reduce((sum, d) => sum + d.confidence * d.weight, 0) / totalWeight : 0
+    ? activeDims.reduce((sum, d) => sum + d.confidence * d.weight, 0) / (totalWeight || 1) : 0
 
   return {
     support, tier,
@@ -163,8 +172,8 @@ export function matchSupportsV4Flat(supports: Support[], userInput: UserInput): 
     supportId: s.support.id,
     score: Math.round(s.score * 100) / 100,
     tier: s.tier,
-    breakdown: { region: s.breakdown.region ?? 0, ...s.breakdown },
-    scores: { region: s.scores.region ?? 0, ...s.scores,
+    breakdown: { ...s.breakdown, region: s.breakdown.region ?? 0 },
+    scores: { ...s.scores, region: s.scores.region ?? 0,
       confidence: s.scores.confidence, weighted: s.scores.weighted },
   }))
   return { result, matchedScores, matchedSupports: result.all.map(s => s.support) }

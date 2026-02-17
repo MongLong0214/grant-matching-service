@@ -27,7 +27,7 @@ function badRequest(error: string) {
 function validateBusinessInput(body: Record<string, unknown>): UserInput | string {
   const { businessType, region, employeeCount, annualRevenue, businessAge, founderAge } = body
 
-  if (!businessType || !region || !employeeCount || !annualRevenue || businessAge === undefined || businessAge === null || founderAge === undefined || founderAge === null) {
+  if (!businessType || !region || employeeCount === undefined || employeeCount === null || annualRevenue === undefined || annualRevenue === null || businessAge === undefined || businessAge === null || founderAge === undefined || founderAge === null) {
     return '필수 항목을 모두 입력해주세요.'
   }
   if (!validBusinessTypes.includes(businessType as string)) return '유효하지 않은 업종입니다.'

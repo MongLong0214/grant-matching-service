@@ -109,7 +109,7 @@ export interface Database {
           business_start_date: string | null
           business_age: number | null
           founder_age: number | null
-          email: string | null
+
           age_group: string | null
           gender: string | null
           household_type: string | null

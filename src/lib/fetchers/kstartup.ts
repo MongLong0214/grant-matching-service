@@ -1,100 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { extractEligibility } from '@/lib/extraction'
+import { fetchKStartup, mapCategory, parseDate } from './kstartup-helpers'
 
-const KSTARTUP_API_URL = 'https://apis.data.go.kr/B552735/kisedKstartupService01/getAnnouncementInformation01'
-
-interface KStartupItem {
-  pblancId: string          // 공고ID (external_id)
-  pblancNm: string          // 공고명 (title)
-  jrsdInsttNm: string       // 주관기관명 (organization)
-  pblancEndDt: string       // 공고마감일 (endDate, format: yyyyMMdd)
-  detailUrl?: string        // 상세URL
-  bizPrchPtrnCdNm?: string  // 사업분류 (maps to category)
-  // Eligibility text fields
-  trgtJgCn?: string         // 대상 자격 내용
-  sprtCn?: string           // 지원 내용
-  excptMtr?: string         // 제외사항
-  prfrCn?: string           // 우대조건
-}
-
-// Map K-Startup bizPrchPtrnCdNm to our SupportCategory
-function mapCategory(bizType?: string): string {
-  if (!bizType) return '기타'
-  const map: Record<string, string> = {
-    '금융': '금융', '융자': '금융', '보증': '금융', '투자': '금융',
-    '기술': '기술', 'R&D': '기술', '연구': '기술',
-    '인력': '인력', '고용': '인력', '교육': '인력', '훈련': '인력',
-    '수출': '수출', '해외': '수출', '글로벌': '수출',
-    '판로': '내수', '마케팅': '내수', '내수': '내수',
-    '창업': '창업', '스타트업': '창업',
-    '경영': '경영', '컨설팅': '경영', '멘토링': '경영',
-  }
-  for (const [keyword, category] of Object.entries(map)) {
-    if (bizType.includes(keyword)) return category
-  }
-  return '기타'
-}
-
-function parseDate(yyyymmdd?: string): string | null {
-  if (!yyyymmdd || yyyymmdd.length !== 8) return null
-  return `${yyyymmdd.slice(0, 4)}-${yyyymmdd.slice(4, 6)}-${yyyymmdd.slice(6, 8)}`
-}
-
-export async function fetchKStartup(apiKey: string): Promise<{
-  items: KStartupItem[]
-  totalCount: number
-  apiCallsUsed: number
-}> {
-  const items: KStartupItem[] = []
-  let totalCount = 0
-  let apiCallsUsed = 0
-  let page = 1
-  const perPage = 100
-
-  while (true) {
-    const url = new URL(KSTARTUP_API_URL)
-    url.searchParams.set('serviceKey', apiKey)
-    url.searchParams.set('page', String(page))
-    url.searchParams.set('perPage', String(perPage))
-    url.searchParams.set('returnType', 'json')
-
-    let res: Response
-    try {
-      res = await fetch(url.toString())
-    } catch (err) {
-      console.log(`[K-Startup] Network error: ${err instanceof Error ? err.message : 'Unknown'}`)
-      break
-    }
-    apiCallsUsed++
-
-    if (res.status === 403) {
-      console.log('[K-Startup] API returned 403 - 활용신청 필요')
-      return { items: [], totalCount: 0, apiCallsUsed }
-    }
-
-    if (!res.ok) {
-      throw new Error(`K-Startup API error: ${res.status} ${res.statusText}`)
-    }
-
-    const json = await res.json()
-    const body = json?.response?.body
-    if (!body) break
-
-    totalCount = body.totalCount || 0
-    const itemList = body.items?.item || []
-
-    if (!Array.isArray(itemList) || itemList.length === 0) break
-    items.push(...itemList)
-
-    if (items.length >= totalCount) break
-    page++
-
-    // Safety: max 50 pages (5000 items)
-    if (page > 50) break
-  }
-
-  return { items, totalCount, apiCallsUsed }
-}
+export { fetchKStartup }
 
 export async function syncKStartup(): Promise<{
   fetched: number
@@ -103,32 +11,37 @@ export async function syncKStartup(): Promise<{
   skipped: number
   apiCallsUsed: number
 }> {
+  const apiKey = process.env.DATA_GO_KR_API_KEY
+  if (!apiKey) {
+    console.log('[K-Startup] DATA_GO_KR_API_KEY not set, skipping sync')
+    return { fetched: 0, inserted: 0, updated: 0, skipped: 0, apiCallsUsed: 0 }
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-  const apiKey = process.env.BIZINFO_API_KEY!
-
   const supabase = createClient(supabaseUrl, serviceKey)
 
-  // Create sync log
   const { data: syncLog } = await supabase
     .from('sync_logs')
     .insert({ source: 'kstartup', status: 'running' })
     .select()
     .single()
-
   const logId = syncLog?.id
+  let apiCallsUsed = 0
 
   try {
-    const { items, apiCallsUsed } = await fetchKStartup(apiKey)
+    const result = await fetchKStartup(apiKey)
+    const items = result.items
+    apiCallsUsed = result.apiCallsUsed
 
-    let inserted = 0
-    let updated = 0
+    let fetched = 0
     let skipped = 0
 
     for (const item of items) {
-      const externalId = `kstartup-${item.pblancId}`
+      const itemId = item.bizPblancId || item.pblancNm
+      if (!itemId) { skipped++; continue }
+      const externalId = `kstartup-${itemId}`
 
-      // Extract eligibility from text fields
       const eligibilityTexts = [
         item.trgtJgCn,
         item.sprtCn,
@@ -136,15 +49,16 @@ export async function syncKStartup(): Promise<{
         item.prfrCn,
       ].filter(Boolean) as string[]
 
-      const extraction = extractEligibility(eligibilityTexts)
+      const title = item.pblancNm || item.bizPblancNm || ''
+      const extraction = extractEligibility(eligibilityTexts, title)
 
       const record = {
-        title: item.pblancNm,
-        organization: item.jrsdInsttNm || '미상',
-        category: mapCategory(item.bizPrchPtrnCdNm),
+        title,
+        organization: item.jrsdInsttNm || item.excInsttNm || '미상',
+        category: mapCategory(item.bizPrchPtrnCdNm, item.sprtField),
         start_date: null as string | null,
-        end_date: parseDate(item.pblancEndDt),
-        detail_url: item.detailUrl || `https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=${item.pblancId}`,
+        end_date: parseDate(item.pblancEndDt || item.rcptEndDt),
+        detail_url: item.detailUrl || `https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=${itemId}`,
         target_regions: extraction.regions,
         target_business_types: extraction.businessTypes,
         target_employee_min: extraction.employeeMin,
@@ -163,51 +77,43 @@ export async function syncKStartup(): Promise<{
         raw_exclusion_text: item.excptMtr || null,
         raw_preference_text: item.prfrCn || null,
         extraction_confidence: extraction.confidence,
+        service_type: 'business',
+        target_age_min: extraction.ageMin,
+        target_age_max: extraction.ageMax,
+        target_household_types: extraction.householdTypes.length > 0 ? extraction.householdTypes : null,
+        target_income_levels: extraction.incomeLevels.length > 0 ? extraction.incomeLevels : null,
+        target_employment_status: extraction.employmentStatus.length > 0 ? extraction.employmentStatus : null,
+        benefit_categories: extraction.benefitCategories.length > 0 ? extraction.benefitCategories : null,
       }
 
-      // Upsert: insert or update based on external_id
-      const { data: existing } = await supabase
+      const { error } = await supabase
         .from('supports')
-        .select('id')
-        .eq('external_id', externalId)
-        .maybeSingle()
+        .upsert(record, { onConflict: 'external_id' })
 
-      if (existing) {
-        const { error } = await supabase
-          .from('supports')
-          .update(record)
-          .eq('external_id', externalId)
-        if (error) { skipped++; continue }
-        updated++
-      } else {
-        const { error } = await supabase
-          .from('supports')
-          .insert(record)
-        if (error) { skipped++; continue }
-        inserted++
-      }
+      if (error) { skipped++; continue }
+      fetched++
     }
 
-    // Update sync log
     if (logId) {
       await supabase.from('sync_logs').update({
         status: 'completed',
         completed_at: new Date().toISOString(),
-        programs_fetched: items.length,
-        programs_inserted: inserted,
-        programs_updated: updated,
+        programs_fetched: fetched,
+        programs_inserted: 0,
+        programs_updated: 0,
         programs_skipped: skipped,
         api_calls_used: apiCallsUsed,
       }).eq('id', logId)
     }
 
-    return { fetched: items.length, inserted, updated, skipped, apiCallsUsed }
+    return { fetched, inserted: 0, updated: 0, skipped, apiCallsUsed }
   } catch (error) {
     if (logId) {
       await supabase.from('sync_logs').update({
         status: 'failed',
         completed_at: new Date().toISOString(),
         error_message: error instanceof Error ? error.message : 'Unknown error',
+        api_calls_used: apiCallsUsed,
       }).eq('id', logId)
     }
     throw error

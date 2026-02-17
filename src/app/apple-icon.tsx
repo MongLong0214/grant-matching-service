@@ -18,12 +18,12 @@ export default function AppleIcon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          borderRadius: 32,
+          borderRadius: 36,
           color: 'white',
-          fontWeight: 700,
+          fontWeight: 800,
         }}
       >
-        G
+        혜
       </div>
     ),
     { ...size }

@@ -14,7 +14,7 @@ export function extractFounderAge(texts: string[]): FounderAgeExtraction {
   let founderAgeMax: number | null = null
 
   // "XX세 ~ YY세" or "XX~YY세" (범위 패턴을 먼저 체크)
-  const rangeMatch = combined.match(/(\d{2})세?\s*[~\-]\s*(\d{2})세/)
+  const rangeMatch = combined.match(/(\d{1,3})세?\s*[~\-]\s*(\d{1,3})세/)
   if (rangeMatch) {
     founderAgeMin = parseInt(rangeMatch[1])
     founderAgeMax = parseInt(rangeMatch[2])
@@ -32,13 +32,13 @@ export function extractFounderAge(texts: string[]): FounderAgeExtraction {
   }
 
   // "만 XX세 이하" or "XX세 이하"
-  const maxMatch = combined.match(/만?\s*(\d{2})세\s*이하/)
+  const maxMatch = combined.match(/만?\s*(\d{1,3})세\s*이하/)
   if (maxMatch) {
     founderAgeMax = parseInt(maxMatch[1])
   }
 
   // "만 XX세 이상" or "XX세 이상"
-  const minMatch = combined.match(/만?\s*(\d{2})세\s*이상/)
+  const minMatch = combined.match(/만?\s*(\d{1,3})세\s*이상/)
   if (minMatch) {
     founderAgeMin = parseInt(minMatch[1])
   }

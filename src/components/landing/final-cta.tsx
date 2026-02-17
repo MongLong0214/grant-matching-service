@@ -68,11 +68,6 @@ export const FinalCta = () => {
                 </Link>
               </Button>
             </div>
-
-            {/* 하단 신뢰 지표 */}
-            <p className="mt-6 text-sm text-white/60">
-              회원가입 불필요 -- 30초 만에 결과 확인
-            </p>
           </div>
         </div>
       </div>

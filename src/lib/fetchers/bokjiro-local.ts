@@ -1,49 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 import { extractEligibility, CTPV_TO_REGION } from '@/lib/extraction'
+import { fetchWithRetry } from '@/lib/fetch-with-retry'
+import { parseXmlItems, getTotalCount } from './bokjiro-local-helpers'
 
 // 보건복지부_지자체 복지 상세정보
-const BOKJIRO_LOCAL_URL = 'https://apis.data.go.kr/B554287/LocalGovernmentWelfareInformations/LcgvWelfaredetailed'
-
-interface BokjiroLocalItem {
-  servId: string
-  servNm: string
-  ctpvNm: string
-  sggNm?: string
-  jurMnofNm: string
-  servDgst: string
-  trgterIndvdlNmArray?: string
-  srvPvsnNm?: string
-}
-
-function parseXmlItems(xmlText: string): BokjiroLocalItem[] {
-  const items: BokjiroLocalItem[] = []
-  const itemRegex = /<servList>([\s\S]*?)<\/servList>/g
-  let match
-
-  while ((match = itemRegex.exec(xmlText)) !== null) {
-    const block = match[1]
-    const get = (tag: string) => {
-      const m = block.match(new RegExp(`<${tag}>(.*?)</${tag}>`))
-      return m ? m[1].trim() : ''
-    }
-    items.push({
-      servId: get('servId'),
-      servNm: get('servNm'),
-      ctpvNm: get('ctpvNm'),
-      sggNm: get('sggNm'),
-      jurMnofNm: get('jurMnofNm'),
-      servDgst: get('servDgst'),
-      trgterIndvdlNmArray: get('trgterIndvdlNmArray'),
-      srvPvsnNm: get('srvPvsnNm'),
-    })
-  }
-  return items
-}
-
-function getTotalCount(xmlText: string): number {
-  const m = xmlText.match(/<totalCount>(\d+)<\/totalCount>/)
-  return m ? parseInt(m[1]) : 0
-}
+const BOKJIRO_LOCAL_URL = 'https://apis.data.go.kr/B554287/LocalGovernmentWelfareInformations/LcgvWelfarelist'
 
 export async function syncBokjiroLocal(): Promise<{
   fetched: number
@@ -55,7 +16,7 @@ export async function syncBokjiroLocal(): Promise<{
 }> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-  const apiKey = process.env.BIZINFO_API_KEY!
+  const apiKey = process.env.DATA_GO_KR_API_KEY!
 
   const supabase = createClient(supabaseUrl, serviceKey)
 
@@ -87,8 +48,6 @@ export async function syncBokjiroLocal(): Promise<{
   const MAX_API_CALLS = 90
   let apiCallsUsed = 0
   let fetched = 0
-  let inserted = 0
-  let updated = 0
   let skipped = 0
   let totalCount = 0
   let isComplete = false
@@ -100,7 +59,7 @@ export async function syncBokjiroLocal(): Promise<{
       url.searchParams.set('pageNo', String(pageNo))
       url.searchParams.set('numOfRows', '10')
 
-      const res = await fetch(url.toString())
+      const res = await fetchWithRetry(url.toString())
       apiCallsUsed++
 
       if (res.status === 403) {
@@ -122,13 +81,17 @@ export async function syncBokjiroLocal(): Promise<{
         if (!item.servId) { skipped++; continue }
         const externalId = `bokjiro-local-${item.servId}`
 
-        // Use ctpvNm for structured region mapping
+        // ctpvNm으로 구조화된 지역 매핑
         const ctpvRegion = item.ctpvNm ? CTPV_TO_REGION[item.ctpvNm] : null
         const eligibilityTexts = [item.servDgst, item.trgterIndvdlNmArray, item.srvPvsnNm].filter(Boolean) as string[]
         const extraction = extractEligibility(eligibilityTexts)
 
         // ctpvNm이 있으면 구조화된 지역 사용 (텍스트 추출보다 신뢰도 높음)
         const regions = ctpvRegion ? [ctpvRegion] : extraction.regions
+
+        // 복지로는 기본 personal, 사업자 키워드가 있으면 both
+        const hasBizKeywords = /기업|사업자|소상공인|법인|자영업/.test(item.servDgst || '')
+        const serviceType = hasBizKeywords ? 'both' : 'personal'
 
         const record = {
           title: item.servNm,
@@ -158,23 +121,20 @@ export async function syncBokjiroLocal(): Promise<{
             ...extraction.confidence,
             regions: ctpvRegion ? 1.0 : extraction.confidence.regions,
           },
+          service_type: serviceType,
+          target_age_min: extraction.ageMin,
+          target_age_max: extraction.ageMax,
+          target_household_types: extraction.householdTypes.length > 0 ? extraction.householdTypes : null,
+          target_income_levels: extraction.incomeLevels.length > 0 ? extraction.incomeLevels : null,
+          target_employment_status: extraction.employmentStatus.length > 0 ? extraction.employmentStatus : null,
+          benefit_categories: extraction.benefitCategories.length > 0 ? extraction.benefitCategories : null,
         }
 
-        const { data: existing } = await supabase
+        const { error } = await supabase
           .from('supports')
-          .select('id')
-          .eq('external_id', externalId)
-          .maybeSingle()
+          .upsert(record, { onConflict: 'external_id' })
 
-        if (existing) {
-          const { error } = await supabase.from('supports').update(record).eq('external_id', externalId)
-          if (error) { skipped++; continue }
-          updated++
-        } else {
-          const { error } = await supabase.from('supports').insert(record)
-          if (error) { skipped++; continue }
-          inserted++
-        }
+        if (error) { skipped++; continue }
         fetched++
       }
 
@@ -208,15 +168,15 @@ export async function syncBokjiroLocal(): Promise<{
         status: 'completed',
         completed_at: new Date().toISOString(),
         programs_fetched: fetched,
-        programs_inserted: inserted,
-        programs_updated: updated,
+        programs_inserted: 0,
+        programs_updated: 0,
         programs_skipped: skipped,
         api_calls_used: apiCallsUsed,
         metadata: { totalCount, isComplete, pageNo },
       }).eq('id', logId)
     }
 
-    return { fetched, inserted, updated, skipped, apiCallsUsed, isComplete }
+    return { fetched, inserted: 0, updated: 0, skipped, apiCallsUsed, isComplete }
   } catch (error) {
     if (logId) {
       await supabase.from('sync_logs').update({

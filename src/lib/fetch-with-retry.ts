@@ -5,9 +5,13 @@ interface FetchWithRetryOptions extends RequestInit {
 }
 
 /**
- * fetch wrapper with retry logic for government API calls.
- * - 5xx/timeout: retry up to 3 times with exponential backoff (1s, 2s, 4s)
- * - 4xx: fail immediately (client error, no point retrying)
+ * 공공 API 호출용 재시도 fetch 래퍼
+ * @param url - 요청 URL
+ * @param options - 재시도 횟수, 딜레이, 타임아웃 포함 옵션
+ * @returns 응답 객체
+ *
+ * - 5xx/타임아웃: 최대 3회 지수 백오프 재시도 (1s, 2s, 4s)
+ * - 4xx: 즉시 반환 (클라이언트 에러는 재시도 무의미)
  */
 export async function fetchWithRetry(
   url: string,

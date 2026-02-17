@@ -58,8 +58,7 @@ export async function syncSubsidy24(): Promise<{
   const logId = syncLog?.id
 
   let apiCallsUsed = 0
-  let inserted = 0
-  let updated = 0
+  let fetched = 0
   let skipped = 0
   const allItems: Subsidy24Item[] = []
 
@@ -151,36 +150,31 @@ export async function syncSubsidy24(): Promise<{
         benefit_categories: extraction.benefitCategories.length > 0 ? extraction.benefitCategories : null,
       }
 
-      const { data: existing } = await supabase
+      const { error } = await supabase
         .from('supports')
-        .select('id')
-        .eq('external_id', externalId)
-        .maybeSingle()
+        .upsert(record, { onConflict: 'external_id' })
 
-      if (existing) {
-        const { error } = await supabase.from('supports').update(record).eq('external_id', externalId)
-        if (error) { skipped++; continue }
-        updated++
-      } else {
-        const { error } = await supabase.from('supports').insert(record)
-        if (error) { skipped++; continue }
-        inserted++
+      if (error) {
+        // 첫 5건만 에러 로그 출력 (디버깅)
+        if (skipped < 5) console.error(`[Subsidy24] Upsert error (${externalId}): ${error.message}`)
+        skipped++; continue
       }
+      fetched++
     }
 
     if (logId) {
       await supabase.from('sync_logs').update({
         status: 'completed',
         completed_at: new Date().toISOString(),
-        programs_fetched: allItems.length,
-        programs_inserted: inserted,
-        programs_updated: updated,
+        programs_fetched: fetched,
+        programs_inserted: 0,
+        programs_updated: 0,
         programs_skipped: skipped,
         api_calls_used: apiCallsUsed,
       }).eq('id', logId)
     }
 
-    return { fetched: allItems.length, inserted, updated, skipped, apiCallsUsed }
+    return { fetched, inserted: 0, updated: 0, skipped, apiCallsUsed }
   } catch (error) {
     if (logId) {
       await supabase.from('sync_logs').update({
