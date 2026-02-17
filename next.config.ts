@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const SUPABASE_PROJECT_ID = "jutlqmvhwsbfmwbxbvmj";
+
 const nextConfig: NextConfig = {
   async headers() {
     return [
@@ -10,6 +12,13 @@ const nextConfig: NextConfig = {
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          // DNS 프리페치 활성화 — 크롤러 및 사용자 연결 속도 향상
+          { key: "X-DNS-Prefetch-Control", value: "on" },
+          // Supabase 도메인 프리커넥트 — 첫 DB 쿼리 레이턴시 감소
+          {
+            key: "Link",
+            value: `<https://${SUPABASE_PROJECT_ID}.supabase.co>; rel=preconnect, <https://fonts.gstatic.com>; rel=preconnect; crossorigin`,
+          },
         ],
       },
       {

@@ -1,6 +1,13 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Search } from 'lucide-react'
+
+// 404 페이지는 색인 불필요
+export const metadata: Metadata = {
+  title: '페이지를 찾을 수 없습니다',
+  robots: { index: false, follow: true },
+}
 
 const NotFound = () => {
   return (

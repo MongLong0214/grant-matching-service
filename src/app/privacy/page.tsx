@@ -4,7 +4,10 @@ import { ArrowLeft } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: '개인정보처리방침',
-  description: '혜택찾기 개인정보처리방침',
+  description: '혜택찾기 개인정보처리방침 — 수집 정보, 이용 목적, 보유 기간 및 이용자 권리를 안내합니다.',
+  alternates: {
+    canonical: 'https://gogov.co.kr/privacy',
+  },
 }
 
 const PrivacyPage = () => {

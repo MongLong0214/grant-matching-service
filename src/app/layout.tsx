@@ -34,28 +34,23 @@ export const metadata: Metadata = {
     template: '%s | 혜택찾기',
   },
   description:
-    '간단한 정보만 입력하면 6,000개 이상의 정부 지원사업 중 나에게 맞는 혜택을 30초 만에 무료로 찾아드립니다. 개인 복지부터 소상공인 지원금까지 맞춤 매칭.',
+    '15,000개+ 정부 지원사업 중 나에게 맞는 혜택을 30초 만에 무료 매칭. 회원가입 없이 개인 복지·소상공인 지원금·창업 보조금까지 즉시 조회.',
   keywords: [
-    '정부혜택',
-    '지원금',
-    '보조금',
-    '복지',
-    '소상공인',
-    '청년',
-    '정부지원금',
-    '소상공인 지원금',
-    '청년 혜택',
-    '주거 지원',
-    '육아 지원',
-    '교육 지원',
-    '취업 지원',
-    '창업 지원금',
-    '정부 보조금',
-    '혜택 찾기',
-    '지원금 매칭',
-    '보조금 신청',
-    '복지 혜택',
-    '정부 혜택 조회',
+    // 핵심 키워드
+    '정부혜택', '지원금', '보조금', '복지', '정부지원금', '혜택 찾기', '지원금 매칭', '정부 혜택 조회',
+    // 대상별 키워드
+    '청년 지원금', '청년 혜택', '신혼부부 혜택', '한부모가정 지원', '장애인 복지', '어르신 혜택',
+    '다문화가정 지원', '임산부 혜택', '대학생 지원금', '소상공인', '소상공인 지원금',
+    // 분야별 키워드
+    '주거 지원', '의료비 지원', '학자금 대출', '고용 지원', '육아 지원', '교육 지원',
+    '취업 지원', '창업 지원금', 'R&D 지원금', '수출 지원', '기술개발 자금', '사업자 보조금',
+    // 지역별 키워드
+    '서울 지원금', '경기도 보조금', '부산 지원사업', '인천 지원금', '대구 지원금', '대전 지원금',
+    '광주 지원금', '울산 지원금', '세종 지원금', '강원 지원사업', '충청 지원금', '전라 지원금',
+    '경상 지원금', '제주 지원사업',
+    // 행동 키워드
+    '정부 지원금 신청방법', '보조금 자격 확인', '복지 혜택', '정부 보조금', '보조금 신청',
+    '지원금 조회', '혜택 조회', '무료 진단', '30초 진단',
   ],
   authors: [{ name: '혜택찾기' }],
   creator: '혜택찾기',
@@ -65,6 +60,13 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
+  // 검색엔진 인증 태그 (환경변수 기반)
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+    other: {
+      'naver-site-verification': process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION ?? '',
+    },
+  },
   openGraph: {
     type: 'website',
     locale: 'ko_KR',
@@ -72,13 +74,22 @@ export const metadata: Metadata = {
     siteName: '혜택찾기',
     title: '혜택찾기 | 나에게 맞는 정부 혜택 찾기',
     description:
-      '6,000개 이상의 정부 지원사업 중 나에게 맞는 혜택을 30초 만에 무료로 찾아드립니다. 개인 복지부터 소상공인 지원금까지.',
+      '15,000개+ 정부 지원사업 중 나에게 맞는 혜택을 30초 만에 무료 매칭. 회원가입 없이 개인 복지·소상공인 지원금까지.',
+    images: [
+      {
+        url: '/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: '혜택찾기 - 나에게 맞는 정부 혜택 찾기',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: '혜택찾기 | 나에게 맞는 정부 혜택 찾기',
     description:
-      '30초 만에 받을 수 있는 정부 혜택을 무료로 찾아보세요. 회원가입 없이 바로 조회.',
+      '15,000개+ 정부 혜택 중 나에게 맞는 것만. 30초 무료 진단, 회원가입 불필요.',
+    images: ['/opengraph-image'],
   },
   robots: {
     index: true,
@@ -115,10 +126,34 @@ export default function RootLayout({
               '@graph': [
                 {
                   '@type': 'Organization',
+                  '@id': 'https://gogov.co.kr/#organization',
                   name: '혜택찾기',
                   url: 'https://gogov.co.kr',
-                  logo: 'https://gogov.co.kr/icon',
+                  logo: {
+                    '@type': 'ImageObject',
+                    url: 'https://gogov.co.kr/icon',
+                  },
                   description: '전국민 정부 혜택 매칭 서비스',
+                  contactPoint: {
+                    '@type': 'ContactPoint',
+                    email: 'support@gogov.co.kr',
+                    contactType: 'customer support',
+                    availableLanguage: '한국어',
+                  },
+                },
+                {
+                  '@type': 'WebSite',
+                  '@id': 'https://gogov.co.kr/#website',
+                  name: '혜택찾기',
+                  url: 'https://gogov.co.kr',
+                  inLanguage: 'ko',
+                  publisher: { '@id': 'https://gogov.co.kr/#organization' },
+                  // Sitelinks Search Box 유도
+                  potentialAction: {
+                    '@type': 'SearchAction',
+                    target: 'https://gogov.co.kr/diagnose',
+                    'query-input': 'required name=search_term_string',
+                  },
                 },
                 {
                   '@type': 'WebApplication',
@@ -132,14 +167,57 @@ export default function RootLayout({
                     priceCurrency: 'KRW',
                   },
                   description:
-                    '6,000개 이상의 정부 지원사업 중 나에게 맞는 혜택을 30초 만에 무료로 찾아드립니다.',
+                    '15,000개 이상의 정부 지원사업 중 나에게 맞는 혜택을 30초 만에 무료로 찾아드립니다.',
                   inLanguage: 'ko',
                 },
                 {
-                  '@type': 'WebSite',
-                  name: '혜택찾기',
+                  '@type': 'GovernmentService',
+                  name: '혜택찾기 정부 혜택 매칭 서비스',
                   url: 'https://gogov.co.kr',
-                  inLanguage: 'ko',
+                  description: '15,000개 이상의 정부 지원사업 데이터를 기반으로 개인 및 소상공인에게 맞춤형 혜택을 매칭하는 무료 서비스입니다.',
+                  provider: { '@id': 'https://gogov.co.kr/#organization' },
+                  serviceType: '정부 혜택 매칭',
+                  areaServed: {
+                    '@type': 'Country',
+                    name: '대한민국',
+                  },
+                },
+                {
+                  '@type': 'HowTo',
+                  name: '혜택찾기 사용 방법',
+                  description: '3단계로 나에게 맞는 정부 혜택을 찾아보세요.',
+                  totalTime: 'PT30S',
+                  step: [
+                    {
+                      '@type': 'HowToStep',
+                      position: 1,
+                      name: '유형 선택',
+                      text: '개인(복지 혜택) 또는 사업자(지원금) 중 원하는 진단 유형을 선택합니다.',
+                    },
+                    {
+                      '@type': 'HowToStep',
+                      position: 2,
+                      name: '정보 입력',
+                      text: '지역, 연령대, 소득 수준 등 간단한 정보를 입력합니다. 회원가입 불필요.',
+                    },
+                    {
+                      '@type': 'HowToStep',
+                      position: 3,
+                      name: '결과 확인',
+                      text: '30초 만에 나에게 맞는 정부 혜택 목록과 신청 방법을 확인합니다.',
+                    },
+                  ],
+                },
+                {
+                  '@type': 'BreadcrumbList',
+                  itemListElement: [
+                    {
+                      '@type': 'ListItem',
+                      position: 1,
+                      name: '홈',
+                      item: 'https://gogov.co.kr',
+                    },
+                  ],
                 },
                 {
                   '@type': 'FAQPage',
@@ -165,7 +243,7 @@ export default function RootLayout({
                       name: '어떤 혜택을 찾아주나요?',
                       acceptedAnswer: {
                         '@type': 'Answer',
-                        text: '복지로, 보조금24, 중소벤처기업부 등의 데이터를 연동하여 6,000개 이상의 정부 지원사업을 분석합니다. 개인 복지부터 사업자 지원금까지 폭넓게 다룹니다.',
+                        text: '복지로, 보조금24, 중소벤처기업부 등의 데이터를 연동하여 15,000개 이상의 정부 지원사업을 분석합니다. 개인 복지부터 사업자 지원금까지 폭넓게 다룹니다.',
                       },
                     },
                     {

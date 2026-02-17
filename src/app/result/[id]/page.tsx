@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getDiagnosis, getSupportsByIds } from '@/lib/data'
 import SupportList from '@/components/support-list'
@@ -14,6 +15,52 @@ function getBusinessAgeLabel(value: number): string {
 
 interface ResultPageProps {
   params: Promise<{ id: string }>
+}
+
+// 진단 결과는 개인 정보 보호를 위해 검색 엔진 색인에서 제외
+export async function generateMetadata({ params }: ResultPageProps): Promise<Metadata> {
+  const { id } = await params
+
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (!uuidRegex.test(id)) {
+    return {
+      robots: { index: false, follow: false },
+    }
+  }
+
+  const diagnosis = await getDiagnosis(id)
+
+  if (!diagnosis) {
+    return {
+      robots: { index: false, follow: false },
+    }
+  }
+
+  const userType: UserType = diagnosis.userType ?? 'business'
+  const count = diagnosis.matchedCount ?? diagnosis.matchedSupportIds.length
+
+  // 진단 조건으로 동적 title 생성 — 공유 시 내용 파악 가능
+  const conditionSummary =
+    userType === 'personal'
+      ? `${diagnosis.region ?? ''} ${diagnosis.ageGroup ?? ''}`.trim()
+      : `${diagnosis.region ?? ''} ${diagnosis.businessType ?? ''}`.trim()
+
+  const typeLabel = userType === 'personal' ? '개인 혜택' : '사업자 지원금'
+  const title = conditionSummary
+    ? `${conditionSummary} 맞춤 ${typeLabel} ${count}건`
+    : `맞춤 ${typeLabel} ${count}건`
+
+  return {
+    title,
+    description: `${conditionSummary ? `${conditionSummary} 조건으로 ` : ''}매칭된 정부 ${typeLabel} ${count}건을 확인하세요. 혜택찾기에서 30초 무료 진단으로 나에게 맞는 혜택을 찾아보세요.`,
+    // 개인 진단 결과는 색인하지 않음 (robots.txt에서도 /result/ disallow 적용)
+    robots: { index: false, follow: false },
+    openGraph: {
+      title: `${title} | 혜택찾기`,
+      description: `${conditionSummary ? `${conditionSummary} 조건으로 ` : ''}매칭된 정부 ${typeLabel} ${count}건.`,
+      url: `https://gogov.co.kr/result/${id}`,
+    },
+  }
 }
 
 /**

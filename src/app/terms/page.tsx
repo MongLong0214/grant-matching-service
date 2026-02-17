@@ -4,7 +4,10 @@ import { ArrowLeft } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: '이용약관',
-  description: '혜택찾기 서비스 이용약관',
+  description: '혜택찾기 서비스 이용약관 — 서비스 내용, 데이터 처리, 면책사항 등을 안내합니다.',
+  alternates: {
+    canonical: 'https://gogov.co.kr/terms',
+  },
 }
 
 const TermsPage = () => {
