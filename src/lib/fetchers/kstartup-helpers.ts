@@ -31,7 +31,7 @@ const FIELD_MAP: Record<string, keyof KStartupItem> = {
   'pbanc_end_dt': 'pblancEndDt',
   'pbanc_rcpt_end_dt': 'rcptEndDt',
   'rcpt_end_dt': 'rcptEndDt',
-  'pbanc_rcpt_bgng_dt': 'pblancEndDt',
+
   'biz_prch_ptrn_cd_nm': 'bizPrchPtrnCdNm',
   'sprt_field': 'sprtField',
   'trgt_jg_cn': 'trgtJgCn',
@@ -78,31 +78,6 @@ function parseKStartupXml(xmlText: string): { items: KStartupItem[], totalCount:
   }
 
   return { items, totalCount }
-}
-
-export function mapCategory(bizType?: string, sprtField?: string): string {
-  const text = [bizType, sprtField].filter(Boolean).join(' ')
-  if (!text) return '기타'
-  const map: Record<string, string> = {
-    '금융': '금융', '융자': '금융', '보증': '금융', '투자': '금융',
-    '기술': '기술', 'R&D': '기술', '연구': '기술',
-    '인력': '인력', '고용': '인력', '교육': '인력', '훈련': '인력',
-    '수출': '수출', '해외': '수출', '글로벌': '수출',
-    '판로': '내수', '마케팅': '내수', '내수': '내수',
-    '창업': '창업', '스타트업': '창업',
-    '경영': '경영', '컨설팅': '경영', '멘토링': '경영',
-  }
-  for (const [keyword, category] of Object.entries(map)) {
-    if (text.includes(keyword)) return category
-  }
-  return '기타'
-}
-
-export function parseDate(yyyymmdd?: string): string | null {
-  if (!yyyymmdd || yyyymmdd.length < 8) return null
-  const cleaned = yyyymmdd.replace(/[^0-9]/g, '')
-  if (cleaned.length !== 8) return null
-  return `${cleaned.slice(0, 4)}-${cleaned.slice(4, 6)}-${cleaned.slice(6, 8)}`
 }
 
 export async function fetchKStartup(apiKey: string): Promise<{

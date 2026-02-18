@@ -30,7 +30,8 @@ export async function syncSocialFinance(): Promise<{
 
   const supabase = createSyncClient()
   const logId = await startSyncLog(supabase, 'social-finance')
-  let apiCallsUsed = 0, inserted = 0, updated = 0, skipped = 0
+  let apiCallsUsed = 0, inserted = 0, skipped = 0
+  const updated = 0
   const allItems: SocialFinanceItem[] = []
 
   try {
@@ -98,9 +99,8 @@ export async function syncSocialFinance(): Promise<{
         region_scope: extraction.regionScope,
       }
 
-      const result = await upsertSupport(supabase, externalId, record)
-      if (result === 'inserted') inserted++
-      else if (result === 'updated') updated++
+      const result = await upsertSupport(supabase, record)
+      if (result === 'upserted') inserted++
       else skipped++
     }
 

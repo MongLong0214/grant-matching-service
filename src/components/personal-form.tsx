@@ -17,7 +17,6 @@ import {
 } from '@/constants'
 import type { UserInput } from '@/types'
 import FormProgress from '@/components/form-progress'
-
 interface PersonalFormProps {
   onSubmit: (data: UserInput) => Promise<void>
   isLoading: boolean
@@ -37,7 +36,6 @@ export const PersonalForm = ({ onSubmit, isLoading, onBack }: PersonalFormProps)
     interestCategories: [] as string[],
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
-
   const filledCount = [
     formData.ageGroup, formData.gender, formData.region,
     formData.householdType, formData.incomeLevel, formData.employmentStatus,
@@ -60,6 +58,22 @@ export const PersonalForm = ({ onSubmit, isLoading, onBack }: PersonalFormProps)
     })
   }
 
+  function validateField(field: string) {
+    const label = FIELD_LABELS[field]
+    if (!label) return
+    const isEmpty = field === 'interestCategories'
+      ? formData.interestCategories.length === 0
+      : !formData[field as keyof typeof formData]
+    setErrors(prev => {
+      if (isEmpty) {
+        const msg = field === 'interestCategories' ? `${label}를 하나 이상 선택해주세요.` : `${label}을(를) 선택해주세요.`
+        return { ...prev, [field]: msg }
+      }
+      const { [field]: _, ...rest } = prev
+      return rest
+    })
+  }
+
   function validate(): Record<string, string> {
     const e: Record<string, string> = {}
     for (const [field, label] of Object.entries(FIELD_LABELS)) {
@@ -75,7 +89,12 @@ export const PersonalForm = ({ onSubmit, isLoading, onBack }: PersonalFormProps)
 
   async function handleSubmit(ev: React.FormEvent) {
     ev.preventDefault()
-    if (Object.keys(validate()).length > 0) return
+    const validationErrors = validate()
+    if (Object.keys(validationErrors).length > 0) {
+      const el = document.getElementById(Object.keys(validationErrors)[0])
+      el?.focus()
+      return
+    }
     await onSubmit({ userType: 'personal', ...formData, subRegion: formData.subRegion || undefined })
   }
 
@@ -91,7 +110,6 @@ export const PersonalForm = ({ onSubmit, isLoading, onBack }: PersonalFormProps)
       </button>
 
       <FormProgress filledCount={filledCount} totalCount={7} />
-
       <RadioOptionGroup
         label="연령대"
         icon={<Calendar className="h-4 w-4" aria-hidden="true" />}
@@ -109,7 +127,6 @@ export const PersonalForm = ({ onSubmit, isLoading, onBack }: PersonalFormProps)
         error={errors.gender}
         columns={2}
       />
-
       {/* 거주 지역 */}
       <div className="space-y-2">
         <Label htmlFor="personal-region" className="flex items-center gap-2 text-sm font-bold">
@@ -124,9 +141,9 @@ export const PersonalForm = ({ onSubmit, isLoading, onBack }: PersonalFormProps)
           regionId="personal-region"
           subRegionId="personal-sub-region"
           regionError={errors.region}
+          onRegionBlur={() => validateField('region')}
         />
       </div>
-
       <RadioOptionGroup
         label="가구 유형"
         icon={<Home className="h-4 w-4" aria-hidden="true" />}
@@ -152,8 +169,7 @@ export const PersonalForm = ({ onSubmit, isLoading, onBack }: PersonalFormProps)
         onValueChange={(val) => update('employmentStatus', val)}
         error={errors.employmentStatus}
       />
-
-      {/* 관심 분야 - 멀티셀렉트 (체크박스) */}
+      {/* 관심 분야 */}
       <div className="space-y-2">
         <Label className="flex items-center gap-2 text-sm font-bold">
           <Heart className="h-4 w-4" aria-hidden="true" />
@@ -184,8 +200,6 @@ export const PersonalForm = ({ onSubmit, isLoading, onBack }: PersonalFormProps)
           <p className="text-xs text-destructive" role="alert">{errors.interestCategories}</p>
         )}
       </div>
-
       <SubmitButton isLoading={isLoading} label="내 혜택 찾기" />
-    </form>
-  )
+    </form>)
 }

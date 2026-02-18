@@ -1,6 +1,9 @@
-import { createClient } from '@supabase/supabase-js'
 import { extractEligibility } from '@/lib/extraction'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
+import {
+  createSyncClient, startSyncLog, completeSyncLog, failSyncLog,
+  upsertSupport, mapCategory,
+} from './sync-helpers'
 
 // 행정안전부_보조금24 (공공서비스 정보) - odcloud API v3
 const SUBSIDY24_API_URL = 'https://api.odcloud.kr/api/gov24/v3/serviceList'
@@ -17,22 +20,6 @@ interface Subsidy24Item {
   상세조회URL?: string
 }
 
-function mapCategory(bizType?: string): string {
-  if (!bizType) return '기타'
-  const map: Record<string, string> = {
-    '금융': '금융', '대출': '금융', '보증': '금융',
-    '기술': '기술', '연구': '기술',
-    '인력': '인력', '고용': '인력', '교육': '인력',
-    '수출': '수출', '해외': '수출',
-    '창업': '창업', '스타트업': '창업',
-    '경영': '경영', '컨설팅': '경영',
-  }
-  for (const [keyword, category] of Object.entries(map)) {
-    if (bizType.includes(keyword)) return category
-  }
-  return '기타'
-}
-
 export async function syncSubsidy24(): Promise<{
   fetched: number
   inserted: number
@@ -46,19 +33,10 @@ export async function syncSubsidy24(): Promise<{
     return { fetched: 0, inserted: 0, updated: 0, skipped: 0, apiCallsUsed: 0 }
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-  const supabase = createClient(supabaseUrl, serviceKey)
-
-  const { data: syncLog } = await supabase
-    .from('sync_logs')
-    .insert({ source: 'subsidy24', status: 'running' })
-    .select()
-    .single()
-  const logId = syncLog?.id
-
+  const supabase = createSyncClient()
+  const logId = await startSyncLog(supabase, 'subsidy24')
   let apiCallsUsed = 0
-  let fetched = 0
+  let inserted = 0
   let skipped = 0
   const allItems: Subsidy24Item[] = []
 
@@ -151,40 +129,15 @@ export async function syncSubsidy24(): Promise<{
         region_scope: extraction.regionScope,
       }
 
-      const { error } = await supabase
-        .from('supports')
-        .upsert(record, { onConflict: 'external_id' })
-
-      if (error) {
-        // 첫 5건만 에러 로그 출력 (디버깅)
-        if (skipped < 5) console.error(`[Subsidy24] Upsert error (${externalId}): ${error.message}`)
-        skipped++; continue
-      }
-      fetched++
+      const result = await upsertSupport(supabase, record)
+      if (result === 'skipped') { skipped++; continue }
+      inserted++
     }
 
-    if (logId) {
-      await supabase.from('sync_logs').update({
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-        programs_fetched: fetched,
-        programs_inserted: 0,
-        programs_updated: 0,
-        programs_skipped: skipped,
-        api_calls_used: apiCallsUsed,
-      }).eq('id', logId)
-    }
-
-    return { fetched, inserted: 0, updated: 0, skipped, apiCallsUsed }
+    await completeSyncLog(supabase, logId, { fetched: allItems.length, inserted, updated: 0, skipped, apiCallsUsed })
+    return { fetched: allItems.length, inserted, updated: 0, skipped, apiCallsUsed }
   } catch (error) {
-    if (logId) {
-      await supabase.from('sync_logs').update({
-        status: 'failed',
-        completed_at: new Date().toISOString(),
-        error_message: error instanceof Error ? error.message : 'Unknown error',
-        api_calls_used: apiCallsUsed,
-      }).eq('id', logId)
-    }
+    await failSyncLog(supabase, logId, error, apiCallsUsed)
     throw error
   }
 }

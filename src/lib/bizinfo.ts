@@ -6,6 +6,7 @@
 import type { SupportCategory } from "@/types"
 import type { Database } from "@/lib/supabase/types"
 import { extractEligibility } from "@/lib/extraction"
+import { fetchWithRetry } from "@/lib/fetch-with-retry"
 
 type SupportInsert = Database["public"]["Tables"]["supports"]["Insert"]
 
@@ -53,7 +54,7 @@ async function fetchPage(
 ): Promise<BizinfoApiResponse> {
   const url = `${endpoint}?serviceKey=${encodeURIComponent(apiKey)}&page=${page}&perPage=1000`
 
-  const response = await fetch(url, {
+  const response = await fetchWithRetry(url, {
     headers: {
       Authorization: `Infuser ${apiKey}`,
     },
@@ -135,10 +136,8 @@ export function mapToSupport(program: BizinfoProgram): SupportInsert {
   const startDate = program.신청시작일자?.trim() || null
   const endDate = program.신청종료일자?.trim() || null
 
-  // 사업명/소관기관/수행기관/분야에서 자격 조건 추출
+  // 수행기관/분야에서 자격 조건 추출 (사업명/소관기관은 별도 파라미터로 전달)
   const extraction = extractEligibility([
-    program.사업명,
-    program.소관기관,
     program.수행기관,
     program.분야,
   ], program.사업명, program.소관기관)
@@ -163,6 +162,10 @@ export function mapToSupport(program: BizinfoProgram): SupportInsert {
     amount: null,
     is_active: true,
     source: "bizinfo",
+    external_id: `bizinfo-${program.번호}`,
+    raw_eligibility_text: [program.수행기관, program.분야].filter(Boolean).join(' ') || null,
+    raw_exclusion_text: null,
+    raw_preference_text: null,
     extraction_confidence: { ...extraction.confidence },
     service_type: 'business',
     target_age_min: extraction.ageMin,

@@ -2,7 +2,7 @@ import { extractEligibility } from '@/lib/extraction'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import {
   createSyncClient, startSyncLog, completeSyncLog, failSyncLog,
-  upsertSupport, getXmlField, parseXmlItems, parseJsonItems, parseDate,
+  upsertSupport, getXmlField, parseXmlItems, parseJsonItems, parseDate, mapCategory,
 } from './sync-helpers'
 
 // 중소벤처기업부_중소기업 사업 정보 v2 (data.go.kr, XML 응답)
@@ -26,25 +26,6 @@ interface SmeBizItem {
   excptMtr?: string           // 제외사항
   pbancUrl?: string           // 공고URL
   detailUrl?: string          // 상세URL
-}
-
-// 제목/내용 기반 카테고리 매핑
-function mapCategory(title?: string, bizNm?: string): string {
-  const text = [title, bizNm].filter(Boolean).join(' ')
-  if (!text) return '기타'
-  const map: Record<string, string> = {
-    '금융': '금융', '융자': '금융', '보증': '금융', '투자': '금융', '대출': '금융',
-    '기술': '기술', 'R&D': '기술', '연구': '기술', '혁신': '기술',
-    '인력': '인력', '고용': '인력', '교육': '인력', '훈련': '인력', '채용': '인력',
-    '수출': '수출', '해외': '수출', '글로벌': '수출', '무역': '수출',
-    '판로': '내수', '마케팅': '내수', '내수': '내수', '판매': '내수',
-    '창업': '창업', '스타트업': '창업', '예비창업': '창업',
-    '경영': '경영', '컨설팅': '경영', '멘토링': '경영', '진단': '경영',
-  }
-  for (const [keyword, category] of Object.entries(map)) {
-    if (text.includes(keyword)) return category
-  }
-  return '기타'
 }
 
 function parseXmlToItems(text: string): SmeBizItem[] {
@@ -71,7 +52,8 @@ export async function syncSmeBizAnnouncement(): Promise<{
 
   const supabase = createSyncClient()
   const logId = await startSyncLog(supabase, 'sme-biz-announcement')
-  let apiCallsUsed = 0, inserted = 0, updated = 0, skipped = 0
+  let apiCallsUsed = 0, inserted = 0, skipped = 0
+  const updated = 0
   const allItems: SmeBizItem[] = []
 
   try {
@@ -149,9 +131,8 @@ export async function syncSmeBizAnnouncement(): Promise<{
         region_scope: extraction.regionScope,
       }
 
-      const result = await upsertSupport(supabase, externalId, record)
-      if (result === 'inserted') inserted++
-      else if (result === 'updated') updated++
+      const result = await upsertSupport(supabase, record)
+      if (result === 'upserted') inserted++
       else skipped++
     }
 

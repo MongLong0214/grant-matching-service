@@ -53,7 +53,8 @@ export async function syncLoanComparison(): Promise<{
 
   const supabase = createSyncClient()
   const logId = await startSyncLog(supabase, 'loan-comparison')
-  let apiCallsUsed = 0, inserted = 0, updated = 0, skipped = 0
+  let apiCallsUsed = 0, inserted = 0, skipped = 0
+  const updated = 0
   const allItems: LoanComparisonItem[] = []
 
   try {
@@ -142,9 +143,8 @@ export async function syncLoanComparison(): Promise<{
         region_scope: extraction.regionScope,
       }
 
-      const result = await upsertSupport(supabase, externalId, record)
-      if (result === 'inserted') inserted++
-      else if (result === 'updated') updated++
+      const result = await upsertSupport(supabase, record)
+      if (result === 'upserted') inserted++
       else skipped++
     }
 

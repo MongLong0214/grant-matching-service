@@ -1,25 +1,10 @@
 import { NextResponse } from "next/server"
-import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { fetchAllPrograms, mapToSupport } from "@/lib/bizinfo"
+import { createSyncClient, startSyncLog, completeSyncLog, failSyncLog } from "@/lib/fetchers/sync-helpers"
 import { timingSafeEqual } from "crypto"
 
 /** 배치 삽입 단위 (Supabase 제한 고려) */
 const BATCH_SIZE = 500
-
-/**
- * 관리자 권한 Supabase 클라이언트 생성
- * RLS 우회를 위해 service_role 키 사용
- */
-function createAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!url || !serviceKey) {
-    throw new Error("SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not configured")
-  }
-
-  return createSupabaseClient(url, serviceKey)
-}
 
 /**
  * POST /api/sync
@@ -54,73 +39,48 @@ export async function POST(request: Request) {
       )
     }
 
+    const supabase = createSyncClient()
+    const logId = await startSyncLog(supabase, 'bizinfo')
+
     console.log("[Sync] Starting Bizinfo sync...")
 
-    // 1. API에서 데이터 가져오기
+    // API에서 데이터 가져오기
     const programs = await fetchAllPrograms(apiKey)
     console.log(`[Sync] Fetched ${programs.length} programs from API`)
 
-    // 2. 관리자 클라이언트 생성 (RLS 우회)
-    const supabase = createAdminClient()
-
-    // 3. 기존 bizinfo 소스 데이터 삭제
-    const { error: deleteError } = await supabase
-      .from("supports")
-      .delete()
-      .eq("source", "bizinfo")
-
-    if (deleteError) {
-      console.error("[Sync] Delete error:", deleteError)
-      return NextResponse.json(
-        { success: false, error: "기존 데이터 삭제 중 오류가 발생했습니다." },
-        { status: 500 }
-      )
-    }
-
-    console.log("[Sync] Deleted old bizinfo records")
-
-    // 4. 배치 삽입
+    // 배치 upsert (external_id 기준)
     const supportData = programs.map(mapToSupport)
-    let insertedCount = 0
+    let upsertedCount = 0
 
     for (let i = 0; i < supportData.length; i += BATCH_SIZE) {
       const batch = supportData.slice(i, i + BATCH_SIZE)
-      const { error: insertError } = await supabase
+      const { error: upsertError } = await supabase
         .from("supports")
-        .insert(batch)
+        .upsert(batch, { onConflict: "external_id" })
 
-      if (insertError) {
-        console.error(`[Sync] Batch ${Math.floor(i / BATCH_SIZE) + 1} error:`, insertError)
+      if (upsertError) {
+        console.error(`[Sync] Batch ${Math.floor(i / BATCH_SIZE) + 1} error:`, upsertError)
+        await failSyncLog(supabase, logId, upsertError, 0)
         return NextResponse.json(
-          {
-            success: false,
-            error: "데이터 삽입 중 오류가 발생했습니다.",
-            partialInserted: insertedCount,
-          },
+          { success: false, error: "데이터 upsert 중 오류가 발생했습니다.", partialUpserted: upsertedCount },
           { status: 500 }
         )
       }
 
-      insertedCount += batch.length
-      console.log(`[Sync] Inserted batch ${Math.floor(i / BATCH_SIZE) + 1}: ${insertedCount}/${supportData.length}`)
+      upsertedCount += batch.length
+      console.log(`[Sync] Upserted batch ${Math.floor(i / BATCH_SIZE) + 1}: ${upsertedCount}/${supportData.length}`)
     }
 
-    console.log(`[Sync] Complete: ${insertedCount} records synced`)
-
-    return NextResponse.json({
-      success: true,
-      synced: insertedCount,
-      total: programs.length,
+    await completeSyncLog(supabase, logId, {
+      fetched: programs.length, inserted: upsertedCount, updated: 0, skipped: 0, apiCallsUsed: 0,
     })
+    console.log(`[Sync] Complete: ${upsertedCount} records synced`)
+
+    return NextResponse.json({ success: true, synced: upsertedCount, total: programs.length })
   } catch (error) {
     console.error("[Sync] Error:", error instanceof Error ? error.message : "Unknown error")
-    const errorMessage = error instanceof Error ? error.message : "Unknown error"
     return NextResponse.json(
-      {
-        success: false,
-        error: "동기화 중 오류가 발생했습니다.",
-        message: process.env.NODE_ENV === "production" ? undefined : errorMessage,
-      },
+      { success: false, error: "동기화 중 오류가 발생했습니다." },
       { status: 500 }
     )
   }

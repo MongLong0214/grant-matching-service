@@ -9,7 +9,7 @@ export interface BokjiroLocalItem {
   srvPvsnNm?: string
 }
 
-export function parseXmlItems(xmlText: string): BokjiroLocalItem[] {
+export function parseServListItems(xmlText: string): BokjiroLocalItem[] {
   const items: BokjiroLocalItem[] = []
   const itemRegex = /<servList>([\s\S]*?)<\/servList>/g
   let match
@@ -34,7 +34,3 @@ export function parseXmlItems(xmlText: string): BokjiroLocalItem[] {
   return items
 }
 
-export function getTotalCount(xmlText: string): number {
-  const m = xmlText.match(/<totalCount>(\d+)<\/totalCount>/)
-  return m ? parseInt(m[1]) : 0
-}

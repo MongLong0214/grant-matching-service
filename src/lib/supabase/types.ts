@@ -1,8 +1,10 @@
+import type { MatchTier } from '@/types'
+
 /** DB matched_scores JSONB 컬럼의 개별 요소 타입 */
 export interface MatchedScoreJson {
   supportId: string
   score: number
-  tier: string
+  tier: MatchTier
   breakdown: {
     region: number
     businessType?: number
@@ -27,6 +29,7 @@ export interface MatchedScoreJson {
     incomeLevel?: number
     employmentStatus?: number
     confidence: number
+    coverage?: number
     weighted: number
   }
 }

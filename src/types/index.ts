@@ -58,12 +58,12 @@ export interface Support {
   regionScope?: RegionScope
 }
 
-export type MatchTier = 'exact' | 'likely' | 'related'
+export type MatchTier = 'tailored' | 'recommended' | 'exploratory'
 
 export interface MatchedScore {
   supportId: string
   score: number
-  tier: MatchTier | string
+  tier: MatchTier
   breakdown: {
     region: number
     businessType?: number
@@ -88,6 +88,7 @@ export interface MatchedScore {
     incomeLevel?: number
     employmentStatus?: number
     confidence: number
+    coverage?: number
     weighted: number
   }
 }

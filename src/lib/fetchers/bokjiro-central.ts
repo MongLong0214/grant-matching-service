@@ -1,7 +1,10 @@
-import { createClient } from '@supabase/supabase-js'
 import { extractEligibility } from '@/lib/extraction'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
-import { parseXmlItems, getTotalCount } from './bokjiro-central-helpers'
+import { parseServListItems } from './bokjiro-central-helpers'
+import {
+  createSyncClient, startSyncLog, completeSyncLog, failSyncLog,
+  upsertSupport, getTotalCount,
+} from './sync-helpers'
 
 // 보건복지부_지자체 복지정보
 const BOKJIRO_CENTRAL_URL = 'https://apis.data.go.kr/B554287/LocalGovernmentWelfareInformations/LcgvWelfarelist'
@@ -14,11 +17,12 @@ export async function syncBokjiroCentral(): Promise<{
   apiCallsUsed: number
   isComplete: boolean
 }> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-  const apiKey = process.env.DATA_GO_KR_API_KEY!
-
-  const supabase = createClient(supabaseUrl, serviceKey)
+  const apiKey = process.env.DATA_GO_KR_API_KEY
+  if (!apiKey) {
+    console.log('[Bokjiro-Central] DATA_GO_KR_API_KEY not set, skipping sync')
+    return { fetched: 0, inserted: 0, updated: 0, skipped: 0, apiCallsUsed: 0, isComplete: false }
+  }
+  const supabase = createSyncClient()
 
   // 커서 조회
   const { data: cursor } = await supabase
@@ -40,17 +44,11 @@ export async function syncBokjiroCentral(): Promise<{
     }).eq('source', 'bokjiro-central')
   }
 
-  // 동기화 로그 생성
-  const { data: syncLog } = await supabase
-    .from('sync_logs')
-    .insert({ source: 'bokjiro-central', status: 'running' })
-    .select()
-    .single()
-  const logId = syncLog?.id
+  const logId = await startSyncLog(supabase, 'bokjiro-central')
 
   const MAX_API_CALLS = 90  // 일일 100회 제한 내 유지
   let apiCallsUsed = 0
-  let fetched = 0
+  let inserted = 0
   let skipped = 0
   let totalCount = 0
   let isComplete = false
@@ -73,7 +71,7 @@ export async function syncBokjiroCentral(): Promise<{
 
       const xml = await res.text()
       totalCount = getTotalCount(xml) || totalCount
-      const items = parseXmlItems(xml)
+      const items = parseServListItems(xml)
 
       if (items.length === 0) {
         isComplete = true
@@ -82,7 +80,8 @@ export async function syncBokjiroCentral(): Promise<{
 
       for (const item of items) {
         if (!item.servId) { skipped++; continue }
-        const externalId = `bokjiro-central-${item.servId}`
+        // bokjiro-local과 동일 API → external_id 통합하여 upsert 중복 제거
+        const externalId = `bokjiro-${item.servId}`
 
         const eligibilityTexts = [
           item.servDgst,
@@ -131,12 +130,9 @@ export async function syncBokjiroCentral(): Promise<{
           region_scope: extraction.regionScope,
         }
 
-        const { error } = await supabase
-          .from('supports')
-          .upsert(record, { onConflict: 'external_id' })
-
-        if (error) { skipped++; continue }
-        fetched++
+        const result = await upsertSupport(supabase, record)
+        if (result === 'skipped') { skipped++; continue }
+        inserted++
       }
 
       // 커서 갱신
@@ -165,29 +161,16 @@ export async function syncBokjiroCentral(): Promise<{
       })
     }
 
-    if (logId) {
-      await supabase.from('sync_logs').update({
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-        programs_fetched: fetched,
-        programs_inserted: 0,
-        programs_updated: 0,
-        programs_skipped: skipped,
-        api_calls_used: apiCallsUsed,
-        metadata: { totalCount, isComplete, pageNo },
-      }).eq('id', logId)
-    }
+    const fetched = inserted + skipped
+    await completeSyncLog(
+      supabase, logId,
+      { fetched, inserted, updated: 0, skipped, apiCallsUsed },
+      { totalCount, isComplete, pageNo },
+    )
 
-    return { fetched, inserted: 0, updated: 0, skipped, apiCallsUsed, isComplete }
+    return { fetched, inserted, updated: 0, skipped, apiCallsUsed, isComplete }
   } catch (error) {
-    if (logId) {
-      await supabase.from('sync_logs').update({
-        status: 'failed',
-        completed_at: new Date().toISOString(),
-        error_message: error instanceof Error ? error.message : 'Unknown error',
-        api_calls_used: apiCallsUsed,
-      }).eq('id', logId)
-    }
+    await failSyncLog(supabase, logId, error, apiCallsUsed)
     throw error
   }
 }

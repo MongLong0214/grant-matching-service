@@ -1,7 +1,10 @@
-import { createClient } from '@supabase/supabase-js'
 import { extractEligibility, CTPV_TO_REGION } from '@/lib/extraction'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
-import { parseXmlItems, getTotalCount } from './bokjiro-local-helpers'
+import { parseServListItems } from './bokjiro-local-helpers'
+import {
+  createSyncClient, startSyncLog, completeSyncLog, failSyncLog,
+  upsertSupport, getTotalCount,
+} from './sync-helpers'
 
 // 보건복지부_지자체 복지 상세정보
 const BOKJIRO_LOCAL_URL = 'https://apis.data.go.kr/B554287/LocalGovernmentWelfareInformations/LcgvWelfarelist'
@@ -14,11 +17,12 @@ export async function syncBokjiroLocal(): Promise<{
   apiCallsUsed: number
   isComplete: boolean
 }> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-  const apiKey = process.env.DATA_GO_KR_API_KEY!
-
-  const supabase = createClient(supabaseUrl, serviceKey)
+  const apiKey = process.env.DATA_GO_KR_API_KEY
+  if (!apiKey) {
+    console.log('[Bokjiro-Local] DATA_GO_KR_API_KEY not set, skipping sync')
+    return { fetched: 0, inserted: 0, updated: 0, skipped: 0, apiCallsUsed: 0, isComplete: false }
+  }
+  const supabase = createSyncClient()
 
   const { data: cursor } = await supabase
     .from('sync_cursors')
@@ -38,16 +42,11 @@ export async function syncBokjiroLocal(): Promise<{
     }).eq('source', 'bokjiro-local')
   }
 
-  const { data: syncLog } = await supabase
-    .from('sync_logs')
-    .insert({ source: 'bokjiro-local', status: 'running' })
-    .select()
-    .single()
-  const logId = syncLog?.id
+  const logId = await startSyncLog(supabase, 'bokjiro-local')
 
   const MAX_API_CALLS = 90
   let apiCallsUsed = 0
-  let fetched = 0
+  let inserted = 0
   let skipped = 0
   let totalCount = 0
   let isComplete = false
@@ -70,7 +69,7 @@ export async function syncBokjiroLocal(): Promise<{
 
       const xml = await res.text()
       totalCount = getTotalCount(xml) || totalCount
-      const items = parseXmlItems(xml)
+      const items = parseServListItems(xml)
 
       if (items.length === 0) {
         isComplete = true
@@ -79,7 +78,8 @@ export async function syncBokjiroLocal(): Promise<{
 
       for (const item of items) {
         if (!item.servId) { skipped++; continue }
-        const externalId = `bokjiro-local-${item.servId}`
+        // bokjiro-central과 동일 API → external_id 통합. local이 ctpvNm 기반 지역 매핑으로 더 정확하므로 덮어씀
+        const externalId = `bokjiro-${item.servId}`
 
         // ctpvNm으로 구조화된 지역 매핑
         const ctpvRegion = item.ctpvNm ? CTPV_TO_REGION[item.ctpvNm] : null
@@ -128,15 +128,12 @@ export async function syncBokjiroLocal(): Promise<{
           target_income_levels: extraction.incomeLevels.length > 0 ? extraction.incomeLevels : null,
           target_employment_status: extraction.employmentStatus.length > 0 ? extraction.employmentStatus : null,
           benefit_categories: extraction.benefitCategories.length > 0 ? extraction.benefitCategories : null,
-          region_scope: extraction.regionScope,
+          region_scope: ctpvRegion ? 'regional' : extraction.regionScope,
         }
 
-        const { error } = await supabase
-          .from('supports')
-          .upsert(record, { onConflict: 'external_id' })
-
-        if (error) { skipped++; continue }
-        fetched++
+        const result = await upsertSupport(supabase, record)
+        if (result === 'skipped') { skipped++; continue }
+        inserted++
       }
 
       const processedIndex = (pageNo - 1) * 10 + items.length - 1
@@ -164,29 +161,16 @@ export async function syncBokjiroLocal(): Promise<{
       })
     }
 
-    if (logId) {
-      await supabase.from('sync_logs').update({
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-        programs_fetched: fetched,
-        programs_inserted: 0,
-        programs_updated: 0,
-        programs_skipped: skipped,
-        api_calls_used: apiCallsUsed,
-        metadata: { totalCount, isComplete, pageNo },
-      }).eq('id', logId)
-    }
+    const fetched = inserted + skipped
+    await completeSyncLog(
+      supabase, logId,
+      { fetched, inserted, updated: 0, skipped, apiCallsUsed },
+      { totalCount, isComplete, pageNo },
+    )
 
-    return { fetched, inserted: 0, updated: 0, skipped, apiCallsUsed, isComplete }
+    return { fetched, inserted, updated: 0, skipped, apiCallsUsed, isComplete }
   } catch (error) {
-    if (logId) {
-      await supabase.from('sync_logs').update({
-        status: 'failed',
-        completed_at: new Date().toISOString(),
-        error_message: error instanceof Error ? error.message : 'Unknown error',
-        api_calls_used: apiCallsUsed,
-      }).eq('id', logId)
-    }
+    await failSyncLog(supabase, logId, error, apiCallsUsed)
     throw error
   }
 }

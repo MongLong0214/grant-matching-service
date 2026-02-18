@@ -33,7 +33,8 @@ export async function syncSmallLoanFinance(): Promise<{
 
   const supabase = createSyncClient()
   const logId = await startSyncLog(supabase, 'small-loan-finance')
-  let apiCallsUsed = 0, inserted = 0, updated = 0, skipped = 0
+  let apiCallsUsed = 0, inserted = 0, skipped = 0
+  const updated = 0
   const allItems: SmallLoanItem[] = []
 
   try {
@@ -108,9 +109,8 @@ export async function syncSmallLoanFinance(): Promise<{
         region_scope: extraction.regionScope,
       }
 
-      const result = await upsertSupport(supabase, externalId, record)
-      if (result === 'inserted') inserted++
-      else if (result === 'updated') updated++
+      const result = await upsertSupport(supabase, record)
+      if (result === 'upserted') inserted++
       else skipped++
     }
 

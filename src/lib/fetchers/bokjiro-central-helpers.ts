@@ -8,7 +8,7 @@ export interface BokjiroCentralItem {
   lifeNmArray?: string
 }
 
-export function parseXmlItems(xmlText: string): BokjiroCentralItem[] {
+export function parseServListItems(xmlText: string): BokjiroCentralItem[] {
   const items: BokjiroCentralItem[] = []
   const itemRegex = /<servList>([\s\S]*?)<\/servList>/g
   let match
@@ -32,7 +32,3 @@ export function parseXmlItems(xmlText: string): BokjiroCentralItem[] {
   return items
 }
 
-export function getTotalCount(xmlText: string): number {
-  const m = xmlText.match(/<totalCount>(\d+)<\/totalCount>/)
-  return m ? parseInt(m[1]) : 0
-}

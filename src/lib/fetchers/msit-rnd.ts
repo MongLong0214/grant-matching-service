@@ -1,7 +1,10 @@
-import { createClient } from '@supabase/supabase-js'
 import { extractEligibility } from '@/lib/extraction'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
-import { type MsitRndItem, parseXmlResponse, parseDate, mapCategory } from './msit-rnd-parser'
+import { type MsitRndItem, parseXmlResponse } from './msit-rnd-parser'
+import {
+  createSyncClient, startSyncLog, completeSyncLog, failSyncLog,
+  upsertSupport, parseDate, mapCategory,
+} from './sync-helpers'
 
 // 과학기술정보통신부_사업공고
 const MSIT_RND_API_URL = 'https://apis.data.go.kr/1721000/msitannouncementinfo/businessAnnouncMentList'
@@ -19,19 +22,10 @@ export async function syncMsitRnd(): Promise<{
     return { fetched: 0, inserted: 0, updated: 0, skipped: 0, apiCallsUsed: 0 }
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-  const supabase = createClient(supabaseUrl, serviceKey)
-
-  const { data: syncLog } = await supabase
-    .from('sync_logs')
-    .insert({ source: 'msit-rnd', status: 'running' })
-    .select()
-    .single()
-  const logId = syncLog?.id
-
+  const supabase = createSyncClient()
+  const logId = await startSyncLog(supabase, 'msit-rnd')
   let apiCallsUsed = 0
-  let fetched = 0
+  let inserted = 0
   let skipped = 0
   const allItems: MsitRndItem[] = []
 
@@ -76,16 +70,15 @@ export async function syncMsitRnd(): Promise<{
       const idBase = `${item.subject}-${item.pressDt || ''}`
       const externalId = `msit-rnd-${Buffer.from(idBase).toString('base64url').slice(0, 32)}`
 
-      const eligibilityTexts = [
-        item.subject,
-      ].filter(Boolean) as string[]
+      const extraction = extractEligibility([], item.subject, item.deptName)
 
-      const extraction = extractEligibility(eligibilityTexts, undefined, item.deptName)
+      // MSIT는 기술부처이므로 카테고리 미매칭 시 '기술'을 기본값으로 사용
+      const cat = mapCategory(item.deptName)
 
       const record = {
         title: item.subject,
         organization: item.deptName || '과학기술정보통신부',
-        category: mapCategory(item.deptName),
+        category: cat === '기타' ? '기술' : cat,
         start_date: parseDate(item.pressDt),
         end_date: null as string | null,
         detail_url: item.viewUrl || 'https://www.msit.go.kr/bbs/list.do?sCode=user&mId=113&mPid=112',
@@ -117,36 +110,15 @@ export async function syncMsitRnd(): Promise<{
         region_scope: extraction.regionScope,
       }
 
-      const { error } = await supabase
-        .from('supports')
-        .upsert(record, { onConflict: 'external_id' })
-
-      if (error) { skipped++; continue }
-      fetched++
+      const result = await upsertSupport(supabase, record)
+      if (result === 'skipped') { skipped++; continue }
+      inserted++
     }
 
-    if (logId) {
-      await supabase.from('sync_logs').update({
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-        programs_fetched: fetched,
-        programs_inserted: 0,
-        programs_updated: 0,
-        programs_skipped: skipped,
-        api_calls_used: apiCallsUsed,
-      }).eq('id', logId)
-    }
-
-    return { fetched, inserted: 0, updated: 0, skipped, apiCallsUsed }
+    await completeSyncLog(supabase, logId, { fetched: allItems.length, inserted, updated: 0, skipped, apiCallsUsed })
+    return { fetched: allItems.length, inserted, updated: 0, skipped, apiCallsUsed }
   } catch (error) {
-    if (logId) {
-      await supabase.from('sync_logs').update({
-        status: 'failed',
-        completed_at: new Date().toISOString(),
-        error_message: error instanceof Error ? error.message : 'Unknown error',
-        api_calls_used: apiCallsUsed,
-      }).eq('id', logId)
-    }
+    await failSyncLog(supabase, logId, error, apiCallsUsed)
     throw error
   }
 }

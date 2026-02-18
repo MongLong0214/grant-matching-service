@@ -1,7 +1,3 @@
-/**
- * 데이터 싱크 공통 유틸리티
- * 싱크 로그 관리, XML 파싱, supports upsert 패턴 추출
- */
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
 export type { SupabaseClient }
@@ -37,6 +33,7 @@ export async function completeSyncLog(
   supabase: SupabaseClient,
   logId: string | undefined,
   stats: SyncStats,
+  metadata?: Record<string, unknown>,
 ): Promise<void> {
   if (!logId) return
   await supabase.from('sync_logs').update({
@@ -47,6 +44,7 @@ export async function completeSyncLog(
     programs_updated: stats.updated,
     programs_skipped: stats.skipped,
     api_calls_used: stats.apiCallsUsed,
+    ...(metadata && { metadata }),
   }).eq('id', logId)
 }
 
@@ -66,24 +64,25 @@ export async function failSyncLog(
   }).eq('id', logId)
 }
 
-/** supports 테이블 upsert (external_id 기준) */
+/** supports 테이블 upsert (external_id 기준, native upsert) */
 export async function upsertSupport(
   supabase: SupabaseClient,
-  externalId: string,
   record: Record<string, unknown>,
-): Promise<'inserted' | 'updated' | 'skipped'> {
-  const { data: existing } = await supabase
+): Promise<'upserted' | 'skipped'> {
+  const { error } = await supabase
     .from('supports')
-    .select('id')
-    .eq('external_id', externalId)
-    .maybeSingle()
-
-  if (existing) {
-    const { error } = await supabase.from('supports').update(record).eq('external_id', externalId)
-    return error ? 'skipped' : 'updated'
+    .upsert(record, { onConflict: 'external_id' })
+  if (error) {
+    console.error(`[upsertSupport] ${record.external_id}: ${error.message}`)
+    return 'skipped'
   }
-  const { error } = await supabase.from('supports').insert(record)
-  return error ? 'skipped' : 'inserted'
+  return 'upserted'
+}
+
+/** XML 응답에서 totalCount 추출 */
+export function getTotalCount(xmlText: string): number {
+  const m = xmlText.match(/<totalCount>(\d+)<\/totalCount>/)
+  return m ? parseInt(m[1]) : 0
 }
 
 /** XML 태그 값 추출 (CDATA 지원) */
@@ -154,7 +153,27 @@ export function parseJsonItems<T>(text: string): {
 /** YYYYMMDD 또는 YYYY-MM-DD 형식 → ISO 날짜 문자열 */
 export function parseDate(dateStr?: string): string | null {
   if (!dateStr) return null
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr
   const cleaned = dateStr.replace(/[^0-9]/g, '')
   if (cleaned.length !== 8) return null
   return `${cleaned.slice(0, 4)}-${cleaned.slice(4, 6)}-${cleaned.slice(6, 8)}`
+}
+
+/** 텍스트에서 지원 카테고리 추출 */
+export function mapCategory(...texts: (string | undefined)[]): string {
+  const text = texts.filter(Boolean).join(' ')
+  if (!text) return '기타'
+  const KEYWORD_MAP: Record<string, string> = {
+    '금융': '금융', '융자': '금융', '보증': '금융', '투자': '금융', '대출': '금융',
+    '기술': '기술', 'R&D': '기술', '연구': '기술', '혁신': '기술', '개발': '기술',
+    '인력': '인력', '고용': '인력', '교육': '인력', '훈련': '인력', '채용': '인력', '양성': '인력',
+    '수출': '수출', '해외': '수출', '글로벌': '수출', '무역': '수출', '국제': '수출', '협력': '수출',
+    '판로': '내수', '마케팅': '내수', '내수': '내수', '판매': '내수',
+    '창업': '창업', '스타트업': '창업', '예비창업': '창업',
+    '경영': '경영', '컨설팅': '경영', '멘토링': '경영', '진단': '경영', '인프라': '경영', '기반': '경영',
+  }
+  for (const [keyword, category] of Object.entries(KEYWORD_MAP)) {
+    if (text.includes(keyword)) return category
+  }
+  return '기타'
 }

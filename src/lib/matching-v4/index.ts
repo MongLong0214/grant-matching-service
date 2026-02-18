@@ -92,8 +92,8 @@ function scoreSupport(
 ): ScoredSupportV4 | null {
   const result = scorePipeline(dims, interestBonus)
   if (!result) return null
-  // 구/군 정확 일치 보너스: 최종 점수에 +0.08 (관심 카테고리 보너스와 유사)
-  if (subRegionMatch) result.finalScore = Math.min(1.0, result.finalScore + 0.08)
+  // 구/군 정확 일치 보너스: coverage 패널티를 상쇄하여 지역 맞춤 정책 가시성 확보
+  if (subRegionMatch) result.finalScore = Math.min(1.0, result.finalScore + 0.15)
   let tier = getTierV4(result.finalScore)
   if (!tier) return null
   // 특정 차원에서 높은 점수(0.8+)가 없으면 tailored 진입을 더 엄격하게

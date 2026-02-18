@@ -15,7 +15,7 @@ for (const l of env.split('\n')) {
 const s = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
 async function main() {
-  // Check columns
+  // 컬럼 존재 확인
   const { data: d1, error: e1 } = await s.from('supports').select('service_type').limit(1)
   console.log('service_type:', e1 ? 'MISSING - ' + e1.message : 'EXISTS')
 
@@ -28,7 +28,7 @@ async function main() {
   const { data: d4, error: e4 } = await s.from('supports').select('benefit_categories').limit(1)
   console.log('benefit_categories:', e4 ? 'MISSING - ' + e4.message : 'EXISTS')
 
-  // Count active by source
+  // 소스별 활성 레코드 수
   const { data: all } = await s.from('supports').select('source').eq('is_active', true)
   const counts: Record<string, number> = {}
   for (const r of all || []) {
