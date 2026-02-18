@@ -18,6 +18,7 @@ export function mapSupportRow(row: SupportRow): Support {
     endDate: row.end_date,
     detailUrl: row.detail_url,
     targetRegions: row.target_regions,
+    targetSubRegions: row.target_sub_regions,
     targetBusinessTypes: row.target_business_types,
     targetEmployeeMin: row.target_employee_min,
     targetEmployeeMax: row.target_employee_max,
@@ -44,6 +45,7 @@ export function mapSupportRow(row: SupportRow): Support {
     targetIncomeLevels: row.target_income_levels,
     targetEmploymentStatus: row.target_employment_status,
     benefitCategories: row.benefit_categories,
+    regionScope: row.region_scope,
   }
 }
 
@@ -57,6 +59,7 @@ export function mapDiagnosisRow(row: DiagnosisRow): Diagnosis {
     userType: (row.user_type as Diagnosis["userType"]) ?? 'business',
     businessType: row.business_type,
     region: row.region,
+    subRegion: row.sub_region,
     employeeCount: row.employee_count,
     annualRevenue: row.annual_revenue,
     businessAge: row.business_age,

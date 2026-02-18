@@ -1,4 +1,5 @@
-// 모든 차원별 점수 계산 함수 + 관련 상수
+// 차원별 점수 계산 함수 + 관련 상수
+import type { RegionScope } from '@/types'
 
 // ─── 사업자 트랙 업종 별칭 ───
 
@@ -22,9 +23,28 @@ export const INCOME_ORDER = ['기초생활', '차상위', '중위50이하', '중
 
 // ─── 점수 함수 ───
 
-export function scoreRegion(regions: string[], userRegion: string): number {
-  if (regions.length === 0) return 1.0
-  return regions.includes(userRegion) ? 1.0 : 0.0
+export function scoreRegionWithDistrict(
+  targetRegions: string[],
+  targetSubRegions: string[] | null | undefined,
+  regionScope: RegionScope | undefined,
+  userRegion: string,
+  userSubRegion: string | undefined,
+): number {
+  const scope = regionScope ?? 'unknown'
+
+  // national → 확인된 전국, 모든 유저에게 1.0
+  if (scope === 'national') return 1.0
+
+  // unknown → 지역 불명, 검증된 정책과 명확한 격차 부여
+  if (scope === 'unknown') return 0.3
+
+  // regional → 기존 로직
+  if (targetRegions.length === 0) return 1.0  // 안전 폴백
+  if (!targetRegions.includes(userRegion)) return 0.0
+  if (!targetSubRegions || targetSubRegions.length === 0) return 1.0
+  if (!userSubRegion) return 0.85
+  if (targetSubRegions.includes(userSubRegion)) return 1.0
+  return 0.75
 }
 
 export function scoreRange(min: number | null, max: number | null, userValue: number, fallbackDenom: number): number {

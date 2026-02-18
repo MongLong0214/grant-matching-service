@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getActiveSupports, saveDiagnosis } from '@/lib/data'
 import { matchSupportsV4Flat } from '@/lib/matching-v4'
 import {
-  BUSINESS_TYPES, REGIONS, EMPLOYEE_OPTIONS, REVENUE_OPTIONS, BUSINESS_AGE_OPTIONS, FOUNDER_AGE_OPTIONS,
+  BUSINESS_TYPES, REGIONS, REGION_DISTRICTS, EMPLOYEE_OPTIONS, REVENUE_OPTIONS, BUSINESS_AGE_OPTIONS, FOUNDER_AGE_OPTIONS,
   AGE_GROUP_OPTIONS, GENDER_OPTIONS, HOUSEHOLD_TYPE_OPTIONS, INCOME_LEVEL_OPTIONS, EMPLOYMENT_STATUS_OPTIONS, INTEREST_CATEGORY_OPTIONS,
 } from '@/constants'
 import type { UserInput } from '@/types'
@@ -25,13 +25,17 @@ function badRequest(error: string) {
 }
 
 function validateBusinessInput(body: Record<string, unknown>): UserInput | string {
-  const { businessType, region, employeeCount, annualRevenue, businessAge, founderAge } = body
+  const { businessType, region, employeeCount, annualRevenue, businessAge, founderAge, subRegion } = body
 
   if (!businessType || !region || employeeCount === undefined || employeeCount === null || annualRevenue === undefined || annualRevenue === null || businessAge === undefined || businessAge === null || founderAge === undefined || founderAge === null) {
     return '필수 항목을 모두 입력해주세요.'
   }
   if (!validBusinessTypes.includes(businessType as string)) return '유효하지 않은 업종입니다.'
   if (!validRegions.includes(region as string)) return '유효하지 않은 지역입니다.'
+  if (subRegion && typeof subRegion === 'string' && subRegion.length > 0) {
+    const districts = REGION_DISTRICTS[region as string]
+    if (!districts || !districts.includes(subRegion)) return '유효하지 않은 세부 지역입니다.'
+  }
 
   const parsedEmployee = Number(employeeCount)
   if (isNaN(parsedEmployee) || !validEmployeeCounts.includes(parsedEmployee)) return '유효하지 않은 직원 수입니다.'
@@ -46,6 +50,7 @@ function validateBusinessInput(body: Record<string, unknown>): UserInput | strin
     userType: 'business',
     businessType: businessType as string,
     region: region as string,
+    subRegion: (subRegion as string) || undefined,
     employeeCount: parsedEmployee,
     annualRevenue: parsedRevenue,
     businessAge: parsedBizAge,
@@ -54,7 +59,7 @@ function validateBusinessInput(body: Record<string, unknown>): UserInput | strin
 }
 
 function validatePersonalInput(body: Record<string, unknown>): UserInput | string {
-  const { ageGroup, gender, region, householdType, incomeLevel, employmentStatus, interestCategories } = body
+  const { ageGroup, gender, region, householdType, incomeLevel, employmentStatus, interestCategories, subRegion } = body
 
   if (!ageGroup || !gender || !region || !householdType || !incomeLevel || !employmentStatus) {
     return '필수 항목을 모두 입력해주세요.'
@@ -62,6 +67,10 @@ function validatePersonalInput(body: Record<string, unknown>): UserInput | strin
   if (!validAgeGroups.includes(ageGroup as string)) return '유효하지 않은 연령대입니다.'
   if (!validGenders.includes(gender as string)) return '유효하지 않은 성별입니다.'
   if (!validRegions.includes(region as string)) return '유효하지 않은 지역입니다.'
+  if (subRegion && typeof subRegion === 'string' && subRegion.length > 0) {
+    const districts = REGION_DISTRICTS[region as string]
+    if (!districts || !districts.includes(subRegion)) return '유효하지 않은 세부 지역입니다.'
+  }
   if (!validHouseholdTypes.includes(householdType as string)) return '유효하지 않은 가구 유형입니다.'
   if (!validIncomeLevels.includes(incomeLevel as string)) return '유효하지 않은 소득 수준입니다.'
   if (!validEmploymentStatuses.includes(employmentStatus as string)) return '유효하지 않은 취업 상태입니다.'
@@ -74,6 +83,7 @@ function validatePersonalInput(body: Record<string, unknown>): UserInput | strin
     ageGroup: ageGroup as string,
     gender: gender as string,
     region: region as string,
+    subRegion: (subRegion as string) || undefined,
     householdType: householdType as string,
     incomeLevel: incomeLevel as string,
     employmentStatus: employmentStatus as string,

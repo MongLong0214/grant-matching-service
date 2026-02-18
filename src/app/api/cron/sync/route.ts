@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { timingSafeEqual } from 'crypto'
 import { runAllSyncTasks } from '@/lib/sync-runner'
 
 export const maxDuration = 300
@@ -6,8 +7,11 @@ export const maxDuration = 300
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
+  const expected = cronSecret ? `Bearer ${cronSecret}` : ''
 
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret || !authHeader ||
+      Buffer.byteLength(authHeader) !== Buffer.byteLength(expected) ||
+      !timingSafeEqual(Buffer.from(authHeader), Buffer.from(expected))) {
     return NextResponse.json(
       { success: false, error: 'Unauthorized' },
       { status: 401 }

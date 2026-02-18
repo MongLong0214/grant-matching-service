@@ -1,8 +1,9 @@
-import { createClient } from '@supabase/supabase-js'
 import { extractEligibility } from '@/lib/extraction'
-import { fetchKStartup, mapCategory, parseDate } from './kstartup-helpers'
-
-export { fetchKStartup }
+import { fetchKStartup } from './kstartup-helpers'
+import {
+  createSyncClient, startSyncLog, completeSyncLog, failSyncLog,
+  upsertSupport, parseDate, mapCategory,
+} from './sync-helpers'
 
 export async function syncKStartup(): Promise<{
   fetched: number
@@ -17,16 +18,8 @@ export async function syncKStartup(): Promise<{
     return { fetched: 0, inserted: 0, updated: 0, skipped: 0, apiCallsUsed: 0 }
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-  const supabase = createClient(supabaseUrl, serviceKey)
-
-  const { data: syncLog } = await supabase
-    .from('sync_logs')
-    .insert({ source: 'kstartup', status: 'running' })
-    .select()
-    .single()
-  const logId = syncLog?.id
+  const supabase = createSyncClient()
+  const logId = await startSyncLog(supabase, 'kstartup')
   let apiCallsUsed = 0
 
   try {
@@ -34,7 +27,7 @@ export async function syncKStartup(): Promise<{
     const items = result.items
     apiCallsUsed = result.apiCallsUsed
 
-    let fetched = 0
+    let inserted = 0
     let skipped = 0
 
     for (const item of items) {
@@ -50,7 +43,7 @@ export async function syncKStartup(): Promise<{
       ].filter(Boolean) as string[]
 
       const title = item.pblancNm || item.bizPblancNm || ''
-      const extraction = extractEligibility(eligibilityTexts, title)
+      const extraction = extractEligibility(eligibilityTexts, title, item.jrsdInsttNm || item.excInsttNm)
 
       const record = {
         title,
@@ -84,38 +77,18 @@ export async function syncKStartup(): Promise<{
         target_income_levels: extraction.incomeLevels.length > 0 ? extraction.incomeLevels : null,
         target_employment_status: extraction.employmentStatus.length > 0 ? extraction.employmentStatus : null,
         benefit_categories: extraction.benefitCategories.length > 0 ? extraction.benefitCategories : null,
+        region_scope: extraction.regionScope,
       }
 
-      const { error } = await supabase
-        .from('supports')
-        .upsert(record, { onConflict: 'external_id' })
-
-      if (error) { skipped++; continue }
-      fetched++
+      const result = await upsertSupport(supabase, record)
+      if (result === 'skipped') { skipped++; continue }
+      inserted++
     }
 
-    if (logId) {
-      await supabase.from('sync_logs').update({
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-        programs_fetched: fetched,
-        programs_inserted: 0,
-        programs_updated: 0,
-        programs_skipped: skipped,
-        api_calls_used: apiCallsUsed,
-      }).eq('id', logId)
-    }
-
-    return { fetched, inserted: 0, updated: 0, skipped, apiCallsUsed }
+    await completeSyncLog(supabase, logId, { fetched: items.length, inserted, updated: 0, skipped, apiCallsUsed })
+    return { fetched: items.length, inserted, updated: 0, skipped, apiCallsUsed }
   } catch (error) {
-    if (logId) {
-      await supabase.from('sync_logs').update({
-        status: 'failed',
-        completed_at: new Date().toISOString(),
-        error_message: error instanceof Error ? error.message : 'Unknown error',
-        api_calls_used: apiCallsUsed,
-      }).eq('id', logId)
-    }
+    await failSyncLog(supabase, logId, error, apiCallsUsed)
     throw error
   }
 }

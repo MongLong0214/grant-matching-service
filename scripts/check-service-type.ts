@@ -37,7 +37,7 @@ async function main() {
   console.log('total active:', totalCount)
   console.log('sum:', (nullCount || 0) + (pCount || 0) + (bCount || 0) + (bothCount || 0) + (unknownCount || 0))
 
-  // Check region distribution for personal-type supports
+  // 개인 타입 supports의 지역 분포 확인
   const { data: personalSample } = await s
     .from('supports')
     .select('id, title, target_regions, target_age_min, target_age_max, target_household_types, target_income_levels, target_employment_status, benefit_categories')

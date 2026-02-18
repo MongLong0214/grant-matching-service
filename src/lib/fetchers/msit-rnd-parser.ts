@@ -42,27 +42,3 @@ export function parseXmlResponse(xmlText: string): { items: MsitRndItem[], total
   return { items, totalCount }
 }
 
-export function parseDate(dateStr?: string): string | null {
-  if (!dateStr) return null
-  // yyyy-MM-dd 형식이면 그대로
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr
-  // yyyyMMdd 형식
-  const cleaned = dateStr.replace(/[^0-9]/g, '')
-  if (cleaned.length !== 8) return null
-  return `${cleaned.slice(0, 4)}-${cleaned.slice(4, 6)}-${cleaned.slice(6, 8)}`
-}
-
-export function mapCategory(bizType?: string): string {
-  if (!bizType) return '기술'
-  const map: Record<string, string> = {
-    'R&D': '기술', '연구': '기술', '기술': '기술', '개발': '기술',
-    '인력': '인력', '교육': '인력', '양성': '인력',
-    '인프라': '경영', '기반': '경영',
-    '국제': '수출', '글로벌': '수출', '협력': '수출',
-    '창업': '창업',
-  }
-  for (const [keyword, category] of Object.entries(map)) {
-    if (bizType.includes(keyword)) return category
-  }
-  return '기술'
-}

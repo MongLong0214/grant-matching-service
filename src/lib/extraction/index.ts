@@ -1,4 +1,6 @@
-import { extractRegions } from './region-dictionary'
+import { extractRegionsWithDistricts, preprocessOrgForRegion } from './region-dictionary'
+import { determineRegionScope } from './region-scope'
+import type { RegionScope } from '@/types'
 import { extractBusinessTypes } from './business-type-dictionary'
 import { extractEmployeeRange } from './employee-patterns'
 import { extractRevenueRange } from './revenue-patterns'
@@ -9,6 +11,7 @@ import { extractBenefitCategories } from './category-patterns'
 
 export interface ExtractionResult {
   regions: string[]
+  subRegions: string[]
   businessTypes: string[]
   employeeMin: number | null
   employeeMax: number | null
@@ -26,6 +29,7 @@ export interface ExtractionResult {
   employmentStatus: string[]
   benefitCategories: string[]
   confidence: ExtractionConfidence
+  regionScope: RegionScope
 }
 
 export interface ExtractionConfidence {
@@ -48,12 +52,14 @@ const REGION_FALSE_POSITIVES = /서울대학교|서울과학기술대학교|서�
 
 /** 추출 결과 후처리 검증 — 비현실적 값 제거 */
 function validateExtraction(result: ExtractionResult, rawText: string): ExtractionResult {
-  let { regions, employeeMin, employeeMax, revenueMin, revenueMax, businessAgeMinMonths, businessAgeMaxMonths, founderAgeMin, founderAgeMax, ageMin, ageMax } = result
+  let { regions, subRegions, employeeMin, employeeMax, revenueMin, revenueMax, businessAgeMinMonths, businessAgeMaxMonths, founderAgeMin, founderAgeMax, ageMin, ageMax } = result
 
   // 기관명 오탐 방지: 원문에 대학교 등이 있으면 해당 지역 제거
   if (REGION_FALSE_POSITIVES.test(rawText)) {
     const cleaned = rawText.replace(REGION_FALSE_POSITIVES, '')
-    regions = extractRegions(cleaned)
+    const reExtracted = extractRegionsWithDistricts(cleaned)
+    regions = reExtracted.regions
+    subRegions = reExtracted.subRegions
   }
 
   // min > max → swap
@@ -88,6 +94,7 @@ function validateExtraction(result: ExtractionResult, rawText: string): Extracti
   return {
     ...result,
     regions,
+    subRegions,
     employeeMin,
     employeeMax,
     revenueMin,
@@ -119,12 +126,15 @@ function validateExtraction(result: ExtractionResult, rawText: string): Extracti
  * 여러 텍스트 소스(자격, 제외, 내용)를 결합하여 추출 범위 극대화
  * AI/LLM 미사용 — 순수 정규식 + 키워드 사전 기반
  */
-export function extractEligibility(texts: string[], title?: string): ExtractionResult {
+export function extractEligibility(texts: string[], title?: string, organization?: string): ExtractionResult {
   const combined = texts.filter(Boolean).join(' ')
   // 제목도 지역/카테고리 추출에 포함 (시/군/구명이 제목에만 있는 경우가 많음)
   const withTitle = title ? `${title} ${combined}` : combined
+  // 기관명도 지역 추출에 포함 (예: "경상북도 김천시", "경북신용보증재단")
+  const processedOrg = organization ? preprocessOrgForRegion(organization) : undefined
+  const regionText = processedOrg ? `${withTitle} ${processedOrg}` : withTitle
 
-  const regions = extractRegions(withTitle)
+  const { regions, subRegions } = extractRegionsWithDistricts(regionText)
   const businessTypes = extractBusinessTypes(combined)
   const { employeeMin, employeeMax } = extractEmployeeRange(combined)
   const { revenueMin, revenueMax } = extractRevenueRange(combined)
@@ -141,6 +151,7 @@ export function extractEligibility(texts: string[], title?: string): ExtractionR
   // confidence는 validateExtraction()에서 최종 계산 (중복 방지)
   const raw: ExtractionResult = {
     regions,
+    subRegions,
     businessTypes,
     employeeMin,
     employeeMax,
@@ -157,12 +168,17 @@ export function extractEligibility(texts: string[], title?: string): ExtractionR
     employmentStatus: empStatus,
     benefitCategories,
     confidence: {} as ExtractionConfidence,
+    regionScope: 'unknown' as RegionScope,
   }
 
-  return validateExtraction(raw, withTitle)
+  const validated = validateExtraction(raw, withTitle)
+  // regionScope는 validate 이후 최종 regions 기반으로 판정
+  validated.regionScope = determineRegionScope(validated.regions, organization, withTitle)
+  return validated
 }
 
-export { extractRegions, CTPV_TO_REGION } from './region-dictionary'
+export { extractRegions, extractRegionsWithDistricts, CTPV_TO_REGION, preprocessOrgForRegion } from './region-dictionary'
+export { determineRegionScope } from './region-scope'
 export { extractBusinessTypes } from './business-type-dictionary'
 export { extractEmployeeRange } from './employee-patterns'
 export { extractRevenueRange } from './revenue-patterns'

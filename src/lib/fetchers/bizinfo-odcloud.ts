@@ -1,55 +1,41 @@
-import { createClient } from '@supabase/supabase-js'
 import { fetchAllPrograms, mapToSupport } from '@/lib/bizinfo'
+import {
+  createSyncClient, startSyncLog, completeSyncLog, failSyncLog,
+} from './sync-helpers'
 
 // 기업마당 odcloud API (2024/2025 지원사업 데이터)
 // bizinfo.ts의 fetchAllPrograms + mapToSupport 재사용
 
+const BATCH_SIZE = 100
+const MAX_PROGRAMS = 5000
+
 export async function syncBizinfoOdcloud(): Promise<{
-  fetched: number
-  inserted: number
-  updated: number
-  skipped: number
+  fetched: number; inserted: number; updated: number; skipped: number; apiCallsUsed: number
 }> {
   const apiKey = process.env.DATA_GO_KR_API_KEY
   if (!apiKey) {
     console.log('[Bizinfo-Odcloud] DATA_GO_KR_API_KEY not set, skipping sync')
-    return { fetched: 0, inserted: 0, updated: 0, skipped: 0 }
+    return { fetched: 0, inserted: 0, updated: 0, skipped: 0, apiCallsUsed: 0 }
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-  const supabase = createClient(supabaseUrl, serviceKey)
+  const supabase = createSyncClient()
+  const logId = await startSyncLog(supabase, 'bizinfo-odcloud')
 
-  const { data: syncLog } = await supabase
-    .from('sync_logs')
-    .insert({ source: 'bizinfo-odcloud', status: 'running' })
-    .select()
-    .single()
-  const logId = syncLog?.id
-
-  let fetched = 0
+  let inserted = 0
   let skipped = 0
 
   try {
     console.log('[Bizinfo-Odcloud] Fetching all programs...')
     const allPrograms = await fetchAllPrograms(apiKey)
 
-    // 5000건 제한 (타임아웃 방지)
-    const programs = allPrograms.slice(0, 5000)
+    // 타임아웃 방지
+    const programs = allPrograms.slice(0, MAX_PROGRAMS)
     console.log(`[Bizinfo-Odcloud] Processing ${programs.length} / ${allPrograms.length} programs`)
 
-    // 배치 upsert (100건씩)
-    const BATCH_SIZE = 100
+    // 배치 upsert — mapToSupport가 external_id/service_type 포함
     for (let i = 0; i < programs.length; i += BATCH_SIZE) {
       const batch = programs.slice(i, i + BATCH_SIZE)
-      const records = batch.map((program) => {
-        const support = mapToSupport(program)
-        return {
-          ...support,
-          service_type: 'business',
-          external_id: `bizinfo-${program.번호 || i}`,
-        }
-      })
+      const records = batch.map(mapToSupport)
 
       const { error } = await supabase
         .from('supports')
@@ -59,32 +45,18 @@ export async function syncBizinfoOdcloud(): Promise<{
         console.error(`[Bizinfo-Odcloud] Batch upsert error at ${i}:`, error.message)
         skipped += batch.length
       } else {
-        fetched += batch.length
+        inserted += batch.length
       }
     }
 
-    if (logId) {
-      await supabase.from('sync_logs').update({
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-        programs_fetched: fetched,
-        programs_inserted: 0,
-        programs_updated: 0,
-        programs_skipped: skipped,
-        metadata: { totalAvailable: allPrograms.length, processed: programs.length },
-      }).eq('id', logId)
-    }
+    await completeSyncLog(supabase, logId, {
+      fetched: programs.length, inserted, updated: 0, skipped, apiCallsUsed: 0,
+    }, { totalAvailable: allPrograms.length, processed: programs.length })
 
-    console.log(`[Bizinfo-Odcloud] Done: ${fetched} fetched, ${skipped} skipped`)
-    return { fetched, inserted: 0, updated: 0, skipped }
+    console.log(`[Bizinfo-Odcloud] Done: ${inserted} inserted, ${skipped} skipped`)
+    return { fetched: programs.length, inserted, updated: 0, skipped, apiCallsUsed: 0 }
   } catch (error) {
-    if (logId) {
-      await supabase.from('sync_logs').update({
-        status: 'failed',
-        completed_at: new Date().toISOString(),
-        error_message: error instanceof Error ? error.message : 'Unknown error',
-      }).eq('id', logId)
-    }
+    await failSyncLog(supabase, logId, error, 0)
     throw error
   }
 }

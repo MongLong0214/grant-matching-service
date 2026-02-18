@@ -88,14 +88,18 @@ function hasInterestCategoryMatch(support: Support, interestCategories: string[]
 
 // 공통 스코어링 (사업자/개인 중복 제거)
 function scoreSupport(
-  support: Support, dims: DimensionInfo[], interestBonus: boolean,
+  support: Support, dims: DimensionInfo[], interestBonus: boolean, subRegionMatch: boolean,
 ): ScoredSupportV4 | null {
   const result = scorePipeline(dims, interestBonus)
   if (!result) return null
+  // 구/군 정확 일치 보너스: coverage 패널티를 상쇄하여 지역 맞춤 정책 가시성 확보
+  if (subRegionMatch) result.finalScore = Math.min(1.0, result.finalScore + 0.15)
   let tier = getTierV4(result.finalScore)
   if (!tier) return null
   // 특정 차원에서 높은 점수(0.8+)가 없으면 tailored 진입을 더 엄격하게
   if (!result.hasSpecificMatch && tier === 'tailored' && result.finalScore < 0.60) tier = 'recommended'
+  // unknown 지역은 tailored 진입 불가 — "맞춤"은 지역이 확인된 정책만
+  if (support.regionScope === 'unknown' && tier === 'tailored') tier = 'recommended'
 
   const breakdown: Record<string, number> = {}
   const scores: Record<string, number> = {}
@@ -128,15 +132,18 @@ export function matchSupportsV4(supports: Support[], userInput: UserInput): Matc
 
   for (const support of supports) {
     if (!isServiceTypeMatch(support, userInput.userType)) { filteredByServiceType++; continue }
+    const subRegionMatch = !!(userInput.subRegion &&
+      support.targetSubRegions && support.targetSubRegions.length > 0 &&
+      support.targetSubRegions.includes(userInput.subRegion))
     if (userInput.userType === 'business') {
       if (isKnockedOutBusiness(support, userInput)) { knockedOut++; continue }
       const dims = getBusinessDimensions(support, userInput)
-      const r = scoreSupport(support, dims, false)
+      const r = scoreSupport(support, dims, false, subRegionMatch)
       if (r) scored.push(r)
     } else {
       if (isKnockedOutPersonal(support, userInput)) { knockedOut++; continue }
       const dims = getPersonalDimensions(support, userInput)
-      const r = scoreSupport(support, dims, hasInterestCategoryMatch(support, userInput.interestCategories))
+      const r = scoreSupport(support, dims, hasInterestCategoryMatch(support, userInput.interestCategories), subRegionMatch)
       if (r) scored.push(r)
     }
   }
