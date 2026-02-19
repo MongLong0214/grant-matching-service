@@ -1,8 +1,13 @@
 /**
  * 전체 데이터 동기화 스크립트
- * DB 리셋 후 승인된 API에서 새 데이터를 수집
+ * 승인된 API에서 데이터를 수집하고 중복 제거
  *
  * 실행: npx tsx scripts/run-sync.ts
+ * 특정 소스만: SYNC_SOURCE=subsidy24 npx tsx scripts/run-sync.ts
+ *
+ * Phase 1: bokjiro-central + 비-bokjiro 소스 (concurrency 2)
+ * Phase 2: bokjiro-local (central 이후 실행 — 지역 덮어쓰기 순서 보장)
+ * Phase 3: 중복 제거
  */
 
 import { readFileSync, existsSync } from 'fs'
@@ -17,64 +22,129 @@ if (existsSync(envPath)) {
     const eqIdx = trimmed.indexOf('=')
     if (eqIdx === -1) continue
     const key = trimmed.slice(0, eqIdx).trim()
-    const val = trimmed.slice(eqIdx + 1).trim()
+    let val = trimmed.slice(eqIdx + 1).trim()
+    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+      val = val.slice(1, -1)
+    }
     if (!process.env[key]) process.env[key] = val
   }
 }
 
-async function main() {
-  console.log('=== 전체 데이터 동기화 시작 ===\n')
-  const startTime = Date.now()
+const CONCURRENCY = 2
 
-  const sources = [
-    { name: 'K-Startup', fn: async () => { const { syncKStartup } = await import('../src/lib/fetchers/kstartup'); return syncKStartup() } },
-    { name: 'Bokjiro Central', fn: async () => { const { syncBokjiroCentral } = await import('../src/lib/fetchers/bokjiro-central'); return syncBokjiroCentral() } },
-    { name: 'Bokjiro Local', fn: async () => { const { syncBokjiroLocal } = await import('../src/lib/fetchers/bokjiro-local'); return syncBokjiroLocal() } },
-    { name: 'Subsidy24', fn: async () => { const { syncSubsidy24 } = await import('../src/lib/fetchers/subsidy24'); return syncSubsidy24() } },
-    { name: 'MSIT R&D', fn: async () => { const { syncMsitRnd } = await import('../src/lib/fetchers/msit-rnd'); return syncMsitRnd() } },
-    { name: 'Small Loan Finance', fn: async () => { const { syncSmallLoanFinance } = await import('../src/lib/fetchers/small-loan-finance'); return syncSmallLoanFinance() } },
-    { name: 'Loan Comparison', fn: async () => { const { syncLoanComparison } = await import('../src/lib/fetchers/loan-comparison'); return syncLoanComparison() } },
-    { name: 'SME Biz Announcement', fn: async () => { const { syncSmeBizAnnouncement } = await import('../src/lib/fetchers/sme-biz-announcement'); return syncSmeBizAnnouncement() } },
-    { name: 'Bizinfo Odcloud', fn: async () => { const { syncBizinfoOdcloud } = await import('../src/lib/fetchers/bizinfo-odcloud'); return syncBizinfoOdcloud() } },
-    { name: 'Social Finance', fn: async () => { const { syncSocialFinance } = await import('../src/lib/fetchers/social-finance'); return syncSocialFinance() } },
-  ]
+interface SyncTask {
+  name: string
+  fn: () => Promise<Record<string, unknown>>
+}
 
-  const results: Record<string, unknown> = {}
+async function runWithConcurrency(
+  tasks: SyncTask[],
+  limit: number,
+): Promise<{ results: Record<string, Record<string, unknown>>; errors: Record<string, string> }> {
+  const results: Record<string, Record<string, unknown>> = {}
   const errors: Record<string, string> = {}
+  const queue = [...tasks]
 
-  for (const source of sources) {
-    try {
-      console.log(`[${source.name}] 동기화 중...`)
-      const result = await source.fn()
-      results[source.name] = result
-      console.log(`[${source.name}] 완료:`, JSON.stringify(result, null, 2))
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Unknown error'
-      errors[source.name] = msg
-      console.error(`[${source.name}] 실패: ${msg}`)
+  async function worker() {
+    while (queue.length > 0) {
+      const task = queue.shift()!
+      try {
+        console.log(`[${task.name}] 동기화 중...`)
+        const result = await task.fn()
+        results[task.name] = result
+        console.log(`[${task.name}] 완료:`, JSON.stringify(result, null, 2))
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Unknown error'
+        errors[task.name] = msg
+        console.error(`[${task.name}] 실패: ${msg}`)
+      }
+      console.log()
     }
-    console.log()
   }
 
-  // 중복 제거
+  const workers = Array.from({ length: Math.min(limit, tasks.length) }, () => worker())
+  await Promise.all(workers)
+
+  return { results, errors }
+}
+
+interface SourceDef {
+  name: string
+  label: string
+  fn: () => Promise<Record<string, unknown>>
+  phase: 1 | 2
+}
+
+async function main() {
+  const syncSource = process.env.SYNC_SOURCE || 'all'
+  console.log(`=== 데이터 동기화 시작 (source: ${syncSource}) ===\n`)
+  const startTime = Date.now()
+
+  const allSources: SourceDef[] = [
+    { name: 'kstartup', label: 'K-Startup', phase: 1, fn: async () => { const { syncKStartup } = await import('../src/lib/fetchers/kstartup'); return syncKStartup() } },
+    { name: 'bokjiro-central', label: 'Bokjiro Central', phase: 1, fn: async () => { const { syncBokjiroCentral } = await import('../src/lib/fetchers/bokjiro-central'); return syncBokjiroCentral() } },
+    { name: 'bokjiro-local', label: 'Bokjiro Local', phase: 2, fn: async () => { const { syncBokjiroLocal } = await import('../src/lib/fetchers/bokjiro-local'); return syncBokjiroLocal() } },
+    { name: 'subsidy24', label: 'Subsidy24', phase: 1, fn: async () => { const { syncSubsidy24 } = await import('../src/lib/fetchers/subsidy24'); return syncSubsidy24() } },
+    { name: 'msit-rnd', label: 'MSIT R&D', phase: 1, fn: async () => { const { syncMsitRnd } = await import('../src/lib/fetchers/msit-rnd'); return syncMsitRnd() } },
+    { name: 'small-loan-finance', label: 'Small Loan Finance', phase: 1, fn: async () => { const { syncSmallLoanFinance } = await import('../src/lib/fetchers/small-loan-finance'); return syncSmallLoanFinance() } },
+    { name: 'loan-comparison', label: 'Loan Comparison', phase: 1, fn: async () => { const { syncLoanComparison } = await import('../src/lib/fetchers/loan-comparison'); return syncLoanComparison() } },
+    { name: 'sme-biz-announcement', label: 'SME Biz Announcement', phase: 1, fn: async () => { const { syncSmeBizAnnouncement } = await import('../src/lib/fetchers/sme-biz-announcement'); return syncSmeBizAnnouncement() } },
+    { name: 'bizinfo-odcloud', label: 'Bizinfo Odcloud', phase: 1, fn: async () => { const { syncBizinfoOdcloud } = await import('../src/lib/fetchers/bizinfo-odcloud'); return syncBizinfoOdcloud() } },
+    { name: 'social-finance', label: 'Social Finance', phase: 1, fn: async () => { const { syncSocialFinance } = await import('../src/lib/fetchers/social-finance'); return syncSocialFinance() } },
+  ]
+
+  const sources = syncSource === 'all'
+    ? allSources
+    : allSources.filter(s => s.name === syncSource)
+
+  if (sources.length === 0) {
+    console.error(`Unknown source: ${syncSource}`)
+    process.exit(1)
+  }
+
+  const allResults: Record<string, Record<string, unknown>> = {}
+  const allErrors: Record<string, string> = {}
+
+  // Phase 1: bokjiro-central + 비-bokjiro 소스 (concurrency 2)
+  const phase1 = sources.filter(s => s.phase === 1).map(s => ({ name: s.label, fn: s.fn }))
+  if (phase1.length > 0) {
+    console.log(`--- Phase 1: ${phase1.length}개 소스 (concurrency ${CONCURRENCY}) ---\n`)
+    const { results, errors } = await runWithConcurrency(phase1, CONCURRENCY)
+    Object.assign(allResults, results)
+    Object.assign(allErrors, errors)
+  }
+
+  // Phase 2: bokjiro-local (central 완료 후 — ctpvNm 지역 덮어쓰기 순서 보장)
+  const phase2 = sources.filter(s => s.phase === 2).map(s => ({ name: s.label, fn: s.fn }))
+  if (phase2.length > 0) {
+    console.log(`--- Phase 2: ${phase2.length}개 소스 (bokjiro-local) ---\n`)
+    const { results, errors } = await runWithConcurrency(phase2, 1)
+    Object.assign(allResults, results)
+    Object.assign(allErrors, errors)
+  }
+
+  // Phase 3: 중복 제거
   try {
+    console.log('--- Phase 3: 중복 제거 ---\n')
     console.log('[Dedup] 중복 제거 중...')
     const { deduplicateSupports } = await import('../src/lib/dedup')
     const dedupResult = await deduplicateSupports()
-    results['dedup'] = dedupResult
     console.log('[Dedup] 완료:', JSON.stringify(dedupResult, null, 2))
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Unknown error'
-    errors['dedup'] = msg
+    allErrors['dedup'] = msg
     console.error(`[Dedup] 실패: ${msg}`)
   }
 
   const duration = ((Date.now() - startTime) / 1000).toFixed(1)
+  const successCount = Object.keys(allResults).length
+  const errorCount = Object.keys(allErrors).length
   console.log(`\n=== 동기화 완료 (${duration}초) ===`)
-  console.log(`성공: ${Object.keys(results).length}개`)
-  console.log(`실패: ${Object.keys(errors).length}개`)
-  if (Object.keys(errors).length > 0) {
-    console.log('실패 목록:', errors)
+  console.log(`성공: ${successCount}개`)
+  console.log(`실패: ${errorCount}개`)
+  if (errorCount > 0) {
+    console.log('실패 목록:', allErrors)
+    process.exit(1)
   }
 }
 
