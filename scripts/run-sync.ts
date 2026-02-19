@@ -32,6 +32,13 @@ if (existsSync(envPath)) {
 
 const CONCURRENCY = 2
 
+// tsx dynamic import에서 ESM/CJS 호환 처리
+// named export가 mod.default 안에 감싸지는 경우 대응
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getExport(mod: any, name: string) {
+  return mod[name] ?? mod.default?.[name]
+}
+
 interface SyncTask {
   name: string
   fn: () => Promise<Record<string, unknown>>
@@ -81,16 +88,16 @@ async function main() {
   const startTime = Date.now()
 
   const allSources: SourceDef[] = [
-    { name: 'kstartup', label: 'K-Startup', phase: 1, fn: async () => { const { syncKStartup } = await import('../src/lib/fetchers/kstartup'); return syncKStartup() } },
-    { name: 'bokjiro-central', label: 'Bokjiro Central', phase: 1, fn: async () => { const { syncBokjiroCentral } = await import('../src/lib/fetchers/bokjiro-central'); return syncBokjiroCentral() } },
-    { name: 'bokjiro-local', label: 'Bokjiro Local', phase: 2, fn: async () => { const { syncBokjiroLocal } = await import('../src/lib/fetchers/bokjiro-local'); return syncBokjiroLocal() } },
-    { name: 'subsidy24', label: 'Subsidy24', phase: 1, fn: async () => { const { syncSubsidy24 } = await import('../src/lib/fetchers/subsidy24'); return syncSubsidy24() } },
-    { name: 'msit-rnd', label: 'MSIT R&D', phase: 1, fn: async () => { const { syncMsitRnd } = await import('../src/lib/fetchers/msit-rnd'); return syncMsitRnd() } },
-    { name: 'small-loan-finance', label: 'Small Loan Finance', phase: 1, fn: async () => { const { syncSmallLoanFinance } = await import('../src/lib/fetchers/small-loan-finance'); return syncSmallLoanFinance() } },
-    { name: 'loan-comparison', label: 'Loan Comparison', phase: 1, fn: async () => { const { syncLoanComparison } = await import('../src/lib/fetchers/loan-comparison'); return syncLoanComparison() } },
-    { name: 'sme-biz-announcement', label: 'SME Biz Announcement', phase: 1, fn: async () => { const { syncSmeBizAnnouncement } = await import('../src/lib/fetchers/sme-biz-announcement'); return syncSmeBizAnnouncement() } },
-    { name: 'bizinfo-odcloud', label: 'Bizinfo Odcloud', phase: 1, fn: async () => { const { syncBizinfoOdcloud } = await import('../src/lib/fetchers/bizinfo-odcloud'); return syncBizinfoOdcloud() } },
-    { name: 'social-finance', label: 'Social Finance', phase: 1, fn: async () => { const { syncSocialFinance } = await import('../src/lib/fetchers/social-finance'); return syncSocialFinance() } },
+    { name: 'kstartup', label: 'K-Startup', phase: 1, fn: async () => { const mod = await import('../src/lib/fetchers/kstartup'); return getExport(mod, 'syncKStartup')() } },
+    { name: 'bokjiro-central', label: 'Bokjiro Central', phase: 1, fn: async () => { const mod = await import('../src/lib/fetchers/bokjiro-central'); return getExport(mod, 'syncBokjiroCentral')() } },
+    { name: 'bokjiro-local', label: 'Bokjiro Local', phase: 2, fn: async () => { const mod = await import('../src/lib/fetchers/bokjiro-local'); return getExport(mod, 'syncBokjiroLocal')() } },
+    { name: 'subsidy24', label: 'Subsidy24', phase: 1, fn: async () => { const mod = await import('../src/lib/fetchers/subsidy24'); return getExport(mod, 'syncSubsidy24')() } },
+    { name: 'msit-rnd', label: 'MSIT R&D', phase: 1, fn: async () => { const mod = await import('../src/lib/fetchers/msit-rnd'); return getExport(mod, 'syncMsitRnd')() } },
+    { name: 'small-loan-finance', label: 'Small Loan Finance', phase: 1, fn: async () => { const mod = await import('../src/lib/fetchers/small-loan-finance'); return getExport(mod, 'syncSmallLoanFinance')() } },
+    { name: 'loan-comparison', label: 'Loan Comparison', phase: 1, fn: async () => { const mod = await import('../src/lib/fetchers/loan-comparison'); return getExport(mod, 'syncLoanComparison')() } },
+    { name: 'sme-biz-announcement', label: 'SME Biz Announcement', phase: 1, fn: async () => { const mod = await import('../src/lib/fetchers/sme-biz-announcement'); return getExport(mod, 'syncSmeBizAnnouncement')() } },
+    { name: 'bizinfo-odcloud', label: 'Bizinfo Odcloud', phase: 1, fn: async () => { const mod = await import('../src/lib/fetchers/bizinfo-odcloud'); return getExport(mod, 'syncBizinfoOdcloud')() } },
+    { name: 'social-finance', label: 'Social Finance', phase: 1, fn: async () => { const mod = await import('../src/lib/fetchers/social-finance'); return getExport(mod, 'syncSocialFinance')() } },
   ]
 
   const sources = syncSource === 'all'
@@ -127,7 +134,8 @@ async function main() {
   try {
     console.log('--- Phase 3: 중복 제거 ---\n')
     console.log('[Dedup] 중복 제거 중...')
-    const { deduplicateSupports } = await import('../src/lib/dedup')
+    const mod = await import('../src/lib/dedup')
+    const deduplicateSupports = getExport(mod, 'deduplicateSupports')
     const dedupResult = await deduplicateSupports()
     console.log('[Dedup] 완료:', JSON.stringify(dedupResult, null, 2))
   } catch (e) {
