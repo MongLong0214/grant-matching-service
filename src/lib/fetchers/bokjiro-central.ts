@@ -46,7 +46,7 @@ export async function syncBokjiroCentral(): Promise<{
 
   const logId = await startSyncLog(supabase, 'bokjiro-central')
 
-  const MAX_API_CALLS = 90  // 일일 100회 제한 내 유지
+  const MAX_API_CALLS = 45  // 일일 100회 제한, bokjiro-local과 동일 엔드포인트 공유 (45+45=90)
   let apiCallsUsed = 0
   let inserted = 0
   let skipped = 0
@@ -65,6 +65,10 @@ export async function syncBokjiroCentral(): Promise<{
 
       if (res.status === 403) {
         console.log('[Bokjiro-Central] API returned 403 - 활용신청 필요')
+        break
+      }
+      if (res.status === 429) {
+        console.warn(`[Bokjiro-Central] 429 rate limited at page ${pageNo}, stopping gracefully (${apiCallsUsed} calls used)`)
         break
       }
       if (!res.ok) throw new Error(`Bokjiro Central API error: ${res.status}`)
@@ -150,6 +154,9 @@ export async function syncBokjiroCentral(): Promise<{
       }
 
       pageNo++
+
+      // API rate limit 방지 (동일 엔드포인트를 bokjiro-local과 공유)
+      await new Promise((r) => setTimeout(r, 500))
     }
 
     if (isComplete) {

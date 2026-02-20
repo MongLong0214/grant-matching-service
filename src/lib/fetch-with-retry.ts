@@ -11,6 +11,7 @@ interface FetchWithRetryOptions extends RequestInit {
  * @returns 응답 객체
  *
  * - 5xx/타임아웃: 최대 3회 지수 백오프 재시도 (1s, 2s, 4s)
+ * - 429: 최대 3회 재시도 (Retry-After 존중, 기본 3s/6s/12s)
  * - 4xx: 즉시 반환 (클라이언트 에러는 재시도 무의미)
  */
 export async function fetchWithRetry(
@@ -33,6 +34,16 @@ export async function fetchWithRetry(
 
       clearTimeout(timeout)
 
+      // 429: 쿼터 초과 — 재시도 (Retry-After 헤더 존중)
+      if (response.status === 429) {
+        if (attempt < maxRetries) {
+          const delay = parseRetryAfter(response, baseDelayMs, attempt)
+          await sleep(delay)
+          continue
+        }
+        return response
+      }
+
       // 4xx: 클라이언트 에러는 재시도 불필요
       if (response.status >= 400 && response.status < 500) {
         return response
@@ -40,7 +51,6 @@ export async function fetchWithRetry(
 
       // 5xx: 서버 에러는 재시도
       if (response.status >= 500) {
-        lastError = new Error(`Server error: ${response.status} ${response.statusText}`)
         if (attempt < maxRetries) {
           const delay = baseDelayMs * Math.pow(2, attempt)
           await sleep(delay)
@@ -53,7 +63,7 @@ export async function fetchWithRetry(
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error))
 
-      // AbortError = timeout, 재시도 대상
+      // 타임아웃/네트워크 에러: 재시도 대상
       if (attempt < maxRetries) {
         const delay = baseDelayMs * Math.pow(2, attempt)
         await sleep(delay)
@@ -63,6 +73,26 @@ export async function fetchWithRetry(
   }
 
   throw lastError ?? new Error('fetchWithRetry: all retries exhausted')
+}
+
+// 429 응답의 Retry-After 헤더 파싱 → 대기 시간(ms) 반환
+// Retry-After 없으면 5xx보다 3배 긴 백오프 적용 (쿼터 초과는 더 긴 대기 필요)
+function parseRetryAfter(response: Response, baseDelayMs: number, attempt: number): number {
+  const RATE_LIMIT_MULTIPLIER = 3
+  const fallback = baseDelayMs * RATE_LIMIT_MULTIPLIER * Math.pow(2, attempt)
+
+  const header = response.headers.get('Retry-After')
+  if (!header) return fallback
+
+  // 정수형 (초 단위)
+  const seconds = parseInt(header, 10)
+  if (!isNaN(seconds)) return Math.max(seconds * 1000, baseDelayMs)
+
+  // HTTP-date 형식 (유효하지 않은 날짜 → fallback)
+  const retryDate = new Date(header).getTime()
+  if (isNaN(retryDate)) return fallback
+  const waitMs = retryDate - Date.now()
+  return waitMs > 0 ? waitMs : fallback
 }
 
 function sleep(ms: number): Promise<void> {

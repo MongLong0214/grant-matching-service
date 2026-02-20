@@ -8,6 +8,7 @@ import { syncLoanComparison } from '@/lib/fetchers/loan-comparison'
 import { syncSmeBizAnnouncement } from '@/lib/fetchers/sme-biz-announcement'
 import { syncBizinfoOdcloud } from '@/lib/fetchers/bizinfo-odcloud'
 import { syncSocialFinance } from '@/lib/fetchers/social-finance'
+import { syncYouthPolicy } from '@/lib/fetchers/youth-policy'
 import { deduplicateSupports } from '@/lib/dedup'
 import { cleanupExpiredSupports } from '@/lib/cleanup'
 import { recordExtractionStats } from '@/lib/extraction-stats'
@@ -30,6 +31,7 @@ const SYNC_TASKS: SyncTask[] = [
   { key: 'smeBizAnnouncement', label: 'SME Biz Announcement', run: syncSmeBizAnnouncement },
   { key: 'bizinfoOdcloud', label: 'Bizinfo Odcloud', run: syncBizinfoOdcloud },
   { key: 'socialFinance', label: 'Social Finance', run: syncSocialFinance },
+  { key: 'youthPolicy', label: 'Youth Policy', run: syncYouthPolicy },
 ]
 
 // 후처리 작업 (중복 제거, 만료 정리, 통계)

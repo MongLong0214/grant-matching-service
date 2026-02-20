@@ -20,6 +20,7 @@ on:
           - sme-biz-announcement
           - bizinfo-odcloud
           - social-finance
+          - youth-policy
 
   # 매일 오전 3시 UTC (정오 KST)
   schedule:
@@ -36,6 +37,7 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       DATA_GO_KR_API_KEY: ${{ secrets.DATA_GO_KR_API_KEY }}
       SUBSIDY24_API_KEY: ${{ secrets.SUBSIDY24_API_KEY }}
+      YOUTH_POLICY_API_KEY: ${{ secrets.YOUTH_POLICY_API_KEY }}
       SYNC_SOURCE: ${{ inputs.source || 'all' }}
 
     steps:

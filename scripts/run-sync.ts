@@ -98,6 +98,7 @@ async function main() {
     { name: 'sme-biz-announcement', label: 'SME Biz Announcement', phase: 1, fn: async () => { const mod = await import('../src/lib/fetchers/sme-biz-announcement'); return getExport(mod, 'syncSmeBizAnnouncement')() } },
     { name: 'bizinfo-odcloud', label: 'Bizinfo Odcloud', phase: 1, fn: async () => { const mod = await import('../src/lib/fetchers/bizinfo-odcloud'); return getExport(mod, 'syncBizinfoOdcloud')() } },
     { name: 'social-finance', label: 'Social Finance', phase: 1, fn: async () => { const mod = await import('../src/lib/fetchers/social-finance'); return getExport(mod, 'syncSocialFinance')() } },
+    { name: 'youth-policy', label: 'Youth Policy', phase: 1, fn: async () => { const mod = await import('../src/lib/fetchers/youth-policy'); return getExport(mod, 'syncYouthPolicy')() } },
   ]
 
   const sources = syncSource === 'all'
@@ -113,7 +114,7 @@ async function main() {
   const allErrors: Record<string, string> = {}
 
   // Phase 1: bokjiro-central + 비-bokjiro 소스 (concurrency 2)
-  const phase1 = sources.filter(s => s.phase === 1).map(s => ({ name: s.label, fn: s.fn }))
+  const phase1 = sources.filter(s => s.phase === 1).map(s => ({ name: s.name, fn: s.fn }))
   if (phase1.length > 0) {
     console.log(`--- Phase 1: ${phase1.length}개 소스 (concurrency ${CONCURRENCY}) ---\n`)
     const { results, errors } = await runWithConcurrency(phase1, CONCURRENCY)
@@ -122,7 +123,7 @@ async function main() {
   }
 
   // Phase 2: bokjiro-local (central 완료 후 — ctpvNm 지역 덮어쓰기 순서 보장)
-  const phase2 = sources.filter(s => s.phase === 2).map(s => ({ name: s.label, fn: s.fn }))
+  const phase2 = sources.filter(s => s.phase === 2).map(s => ({ name: s.name, fn: s.fn }))
   if (phase2.length > 0) {
     console.log(`--- Phase 2: ${phase2.length}개 소스 (bokjiro-local) ---\n`)
     const { results, errors } = await runWithConcurrency(phase2, 1)
@@ -152,7 +153,14 @@ async function main() {
   console.log(`실패: ${errorCount}개`)
   if (errorCount > 0) {
     console.log('실패 목록:', allErrors)
-    process.exit(1)
+    // bokjiro rate-limit 실패는 커서 기반이므로 다음 실행에서 재개됨 → 비치명적
+    const criticalErrors = Object.entries(allErrors).filter(
+      ([name]) => !name.startsWith('bokjiro')
+    )
+    if (criticalErrors.length > 0) {
+      process.exit(1)
+    }
+    console.log('(Bokjiro rate-limit 실패는 비치명적, 커서 기반으로 다음 실행에서 재개)')
   }
 }
 
