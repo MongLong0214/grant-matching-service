@@ -90,8 +90,19 @@ export async function batchUpsertSupports(
   let inserted = 0
   let skipped = 0
 
-  for (let i = 0; i < records.length; i += BATCH_SIZE) {
-    const batch = records.slice(i, i + BATCH_SIZE)
+  // external_id 기준 중복 제거 (같은 배치 내 중복 시 PostgreSQL ON CONFLICT 오류 방지)
+  const deduped = new Map<string, Record<string, unknown>>()
+  for (const r of records) {
+    deduped.set(r.external_id as string, r)
+  }
+  const uniqueRecords = Array.from(deduped.values())
+  const dupCount = records.length - uniqueRecords.length
+  if (dupCount > 0) {
+    console.log(`[${source}] ${dupCount}건 중복 제거 (${records.length} → ${uniqueRecords.length})`)
+  }
+
+  for (let i = 0; i < uniqueRecords.length; i += BATCH_SIZE) {
+    const batch = uniqueRecords.slice(i, i + BATCH_SIZE)
     const { error } = await supabase
       .from('supports')
       .upsert(batch, { onConflict: 'external_id' })

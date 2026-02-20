@@ -128,6 +128,13 @@ export async function fetchAllPrograms(apiKey: string): Promise<BizinfoProgram[]
   const uniquePrograms = Array.from(programMap.values())
   console.log(`[Bizinfo] 중복 제거: ${programs2025.length + programs2024.length} → ${uniquePrograms.length}건`)
 
+  // 최신순 정렬: 신청종료일자 → 등록일자 → 신청시작일자 (최신 정책 우선 처리)
+  uniquePrograms.sort((a, b) => {
+    const dateA = a.신청종료일자 || a.등록일자 || a.신청시작일자 || ''
+    const dateB = b.신청종료일자 || b.등록일자 || b.신청시작일자 || ''
+    return dateB.localeCompare(dateA)
+  })
+
   return uniquePrograms
 }
 

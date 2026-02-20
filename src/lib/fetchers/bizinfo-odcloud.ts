@@ -6,8 +6,7 @@ import {
 // 기업마당 odcloud API (2024/2025 지원사업 데이터)
 // bizinfo.ts의 fetchAllPrograms + mapToSupport 재사용
 
-const BATCH_SIZE = 100
-const MAX_PROGRAMS = 5000
+const BATCH_SIZE = 200
 
 export async function syncBizinfoOdcloud(): Promise<{
   fetched: number; inserted: number; updated: number; skipped: number; apiCallsUsed: number
@@ -26,11 +25,8 @@ export async function syncBizinfoOdcloud(): Promise<{
 
   try {
     console.log('[Bizinfo-Odcloud] Fetching all programs...')
-    const allPrograms = await fetchAllPrograms(apiKey)
-
-    // 타임아웃 방지
-    const programs = allPrograms.slice(0, MAX_PROGRAMS)
-    console.log(`[Bizinfo-Odcloud] Processing ${programs.length} / ${allPrograms.length} programs`)
+    const programs = await fetchAllPrograms(apiKey)
+    console.log(`[Bizinfo-Odcloud] ${programs.length}건 처리 시작 (최신순 정렬)`)
 
     // 배치 upsert — mapToSupport가 external_id/service_type 포함
     for (let i = 0; i < programs.length; i += BATCH_SIZE) {
@@ -51,7 +47,7 @@ export async function syncBizinfoOdcloud(): Promise<{
 
     await completeSyncLog(supabase, logId, {
       fetched: programs.length, inserted, updated: 0, skipped, apiCallsUsed: 0,
-    }, { totalAvailable: allPrograms.length, processed: programs.length })
+    })
 
     console.log(`[Bizinfo-Odcloud] Done: ${inserted} inserted, ${skipped} skipped`)
     return { fetched: programs.length, inserted, updated: 0, skipped, apiCallsUsed: 0 }
