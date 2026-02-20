@@ -63,7 +63,7 @@ export async function syncSmeBizAnnouncement(): Promise<{
       url.searchParams.set('serviceKey', apiKey)
       url.searchParams.set('pageNo', String(page))
       url.searchParams.set('numOfRows', '1000')
-      const res = await fetchWithRetry(url.toString())
+      const res = await fetchWithRetry(url.toString(), { timeoutMs: 120000 })
       apiCallsUsed++
 
       if (res.status === 429) { console.warn(`[SmeBizAnnouncement] 429 rate limited (${page}페이지), 중단 (${apiCallsUsed} calls)`); break }
