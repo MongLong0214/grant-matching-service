@@ -42,7 +42,7 @@ export async function syncSubsidy24(): Promise<{
 
   try {
     let page = 1
-    const perPage = 100
+    const perPage = 1000
 
     while (true) {
       const url = new URL(SUBSIDY24_API_URL)

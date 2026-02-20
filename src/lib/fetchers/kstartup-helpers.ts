@@ -89,7 +89,7 @@ export async function fetchKStartup(apiKey: string): Promise<{
   let totalCount = 0
   let apiCallsUsed = 0
   let page = 1
-  const perPage = 100
+  const perPage = 1000
 
   while (true) {
     const url = new URL(KSTARTUP_API_URL)

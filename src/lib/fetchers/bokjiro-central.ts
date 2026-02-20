@@ -31,7 +31,7 @@ export async function syncBokjiroCentral(): Promise<{
     .eq('source', 'bokjiro-central')
     .maybeSingle()
 
-  let pageNo = cursor ? Math.floor((cursor.last_processed_index + 1) / 10) + 1 : 1
+  let pageNo = cursor ? Math.floor((cursor.last_processed_index + 1) / 1000) + 1 : 1
   const isAlreadyComplete = cursor?.is_complete || false
 
   if (isAlreadyComplete) {
@@ -58,7 +58,7 @@ export async function syncBokjiroCentral(): Promise<{
       const url = new URL(BOKJIRO_CENTRAL_URL)
       url.searchParams.set('serviceKey', apiKey)
       url.searchParams.set('pageNo', String(pageNo))
-      url.searchParams.set('numOfRows', '10')
+      url.searchParams.set('numOfRows', '1000')
 
       const res = await fetchWithRetry(url.toString())
       apiCallsUsed++
@@ -140,7 +140,7 @@ export async function syncBokjiroCentral(): Promise<{
       }
 
       // 커서 갱신
-      const processedIndex = (pageNo - 1) * 10 + items.length - 1
+      const processedIndex = (pageNo - 1) * 1000 + items.length - 1
       await supabase.from('sync_cursors').upsert({
         source: 'bokjiro-central',
         last_processed_index: processedIndex,

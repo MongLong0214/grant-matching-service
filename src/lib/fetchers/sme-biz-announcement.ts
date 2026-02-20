@@ -62,7 +62,7 @@ export async function syncSmeBizAnnouncement(): Promise<{
       const url = new URL(SME_BIZ_API_URL)
       url.searchParams.set('serviceKey', apiKey)
       url.searchParams.set('pageNo', String(page))
-      url.searchParams.set('numOfRows', '100')
+      url.searchParams.set('numOfRows', '1000')
       const res = await fetchWithRetry(url.toString())
       apiCallsUsed++
 

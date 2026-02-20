@@ -43,7 +43,7 @@ export async function syncSmallLoanFinance(): Promise<{
       const url = new URL(API_URL)
       url.searchParams.set('serviceKey', apiKey)
       url.searchParams.set('pageNo', String(pageNo))
-      url.searchParams.set('numOfRows', '100')
+      url.searchParams.set('numOfRows', '1000')
       url.searchParams.set('resultType', 'json')
       const res = await fetchWithRetry(url.toString())
       apiCallsUsed++

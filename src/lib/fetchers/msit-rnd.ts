@@ -31,7 +31,7 @@ export async function syncMsitRnd(): Promise<{
 
   try {
     let pageNo = 1
-    const numOfRows = 100
+    const numOfRows = 1000
 
     while (true) {
       const url = new URL(MSIT_RND_API_URL)
