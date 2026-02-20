@@ -1,3 +1,4 @@
+import { createHash } from 'crypto'
 import { extractEligibility } from '@/lib/extraction'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import { type MsitRndItem, parseXmlResponse } from './msit-rnd-parser'
@@ -71,9 +72,9 @@ export async function syncMsitRnd(): Promise<{
     const records: Record<string, unknown>[] = []
     for (const item of allItems) {
       if (!item.subject) { skipped++; continue }
-      // subject를 해시하여 고유 ID 생성 (이 API는 별도 ID 필드가 없음)
+      // subject+날짜 SHA-256 해시로 고유 ID 생성 (이 API는 별도 ID 필드가 없음)
       const idBase = `${item.subject}-${item.pressDt || ''}`
-      const externalId = `msit-rnd-${Buffer.from(idBase).toString('base64url').slice(0, 32)}`
+      const externalId = `msit-rnd-${createHash('sha256').update(idBase).digest('hex').slice(0, 16)}`
 
       const extraction = extractEligibility([], item.subject, item.deptName)
 

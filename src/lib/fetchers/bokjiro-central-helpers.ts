@@ -16,7 +16,7 @@ export function parseServListItems(xmlText: string): BokjiroCentralItem[] {
   while ((match = itemRegex.exec(xmlText)) !== null) {
     const block = match[1]
     const get = (tag: string) => {
-      const m = block.match(new RegExp(`<${tag}>(.*?)</${tag}>`))
+      const m = block.match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`))
       return m ? m[1].trim() : ''
     }
     items.push({

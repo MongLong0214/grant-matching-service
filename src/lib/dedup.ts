@@ -180,7 +180,11 @@ export async function deduplicateSupports(): Promise<DedupResult> {
       .from('supports')
       .update({ is_active: false })
       .in('id', batch)
-    if (!error) deactivated += batch.length
+    if (error) {
+      console.error(`[Dedup] 비활성화 오류 (${i}~${i + batch.length}): ${error.message}`)
+    } else {
+      deactivated += batch.length
+    }
   }
 
   return { duplicatesFound: toDeactivate.length, deactivated, pairs }

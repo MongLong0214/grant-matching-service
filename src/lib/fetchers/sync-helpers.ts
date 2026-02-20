@@ -64,21 +64,6 @@ export async function failSyncLog(
   }).eq('id', logId)
 }
 
-/** supports 테이블 upsert (external_id 기준, native upsert) — 단건용 */
-export async function upsertSupport(
-  supabase: SupabaseClient,
-  record: Record<string, unknown>,
-): Promise<'upserted' | 'skipped'> {
-  const { error } = await supabase
-    .from('supports')
-    .upsert(record, { onConflict: 'external_id' })
-  if (error) {
-    console.error(`[upsertSupport] ${record.external_id}: ${error.message}`)
-    return 'skipped'
-  }
-  return 'upserted'
-}
-
 const BATCH_SIZE = 200
 
 /** supports 테이블 배치 upsert — 대량 데이터 처리용 (Supabase 502 방지) */
@@ -115,7 +100,7 @@ export async function batchUpsertSupports(
     }
 
     // Supabase 과부하 방지: 배치 간 50ms 대기
-    if (i + BATCH_SIZE < records.length) {
+    if (i + BATCH_SIZE < uniqueRecords.length) {
       await new Promise((r) => setTimeout(r, 50))
     }
   }
@@ -131,7 +116,7 @@ export function getTotalCount(xmlText: string): number {
 
 /** XML 태그 값 추출 (CDATA 지원) */
 export function getXmlField(block: string, tag: string): string {
-  const m = block.match(new RegExp(`<${tag}>(?:<!\\[CDATA\\[)?(.*?)(?:\\]\\]>)?</${tag}>`))
+  const m = block.match(new RegExp(`<${tag}>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?</${tag}>`))
   return m ? m[1].trim() : ''
 }
 
@@ -141,8 +126,7 @@ export function parseXmlItems(text: string): {
   totalCount: number
   error: string | null
 } {
-  const totalCountMatch = text.match(/<totalCount>(\d+)<\/totalCount>/)
-  const totalCount = totalCountMatch ? parseInt(totalCountMatch[1]) : 0
+  const totalCount = getTotalCount(text)
 
   const resultCodeMatch = text.match(/<resultCode>(\d+)<\/resultCode>/)
   if (resultCodeMatch && resultCodeMatch[1] !== '00') {
