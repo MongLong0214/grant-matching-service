@@ -66,6 +66,12 @@ async function fetchPage(
     return null
   }
 
+  // 4xx: 데이터셋 만료·파라미터 오류 등 → 해당 연도 스킵
+  if (response.status >= 400 && response.status < 500) {
+    console.warn(`[Bizinfo] ${response.status} 에러 (${page}페이지) — 데이터셋 접근 불가, 스킵`)
+    return null
+  }
+
   if (!response.ok) {
     throw new Error(`Bizinfo API error: ${response.status} ${response.statusText}`)
   }
