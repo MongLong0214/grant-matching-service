@@ -5,8 +5,9 @@
  * 실행: npx tsx scripts/run-sync.ts
  * 특정 소스만: SYNC_SOURCE=subsidy24 npx tsx scripts/run-sync.ts
  *
- * Phase 1: bokjiro-central + 비-bokjiro 소스 (concurrency 2)
- * Phase 2: bokjiro-local (central 이후 실행 — 지역 덮어쓰기 순서 보장)
+ * Phase 1a: 비-data.go.kr 소스 (subsidy24, youth-policy) — 병렬 실행
+ * Phase 1b: data.go.kr 소스 (kstartup, bokjiro-central 등) — 순차 실행 (동일 API 키 rate limit 방지)
+ * Phase 2: bokjiro-local (central 이후 — 지역 덮어쓰기 순서 보장)
  * Phase 3: 중복 제거
  */
 
@@ -29,8 +30,6 @@ if (existsSync(envPath)) {
     if (!process.env[key]) process.env[key] = val
   }
 }
-
-const CONCURRENCY = 2
 
 // tsx dynamic import에서 ESM/CJS 호환 처리
 // named export가 mod.default 안에 감싸지는 경우 대응
@@ -80,6 +79,7 @@ interface SourceDef {
   label: string
   fn: () => Promise<Record<string, unknown>>
   phase: 1 | 2
+  dataGoKr: boolean  // data.go.kr API 키 사용 여부 (rate limit 그룹핑용)
 }
 
 async function main() {
@@ -88,17 +88,17 @@ async function main() {
   const startTime = Date.now()
 
   const allSources: SourceDef[] = [
-    { name: 'kstartup', label: 'K-Startup', phase: 1, fn: async () => { const mod = await import('../src/lib/fetchers/kstartup'); return getExport(mod, 'syncKStartup')() } },
-    { name: 'bokjiro-central', label: 'Bokjiro Central', phase: 1, fn: async () => { const mod = await import('../src/lib/fetchers/bokjiro-central'); return getExport(mod, 'syncBokjiroCentral')() } },
-    { name: 'bokjiro-local', label: 'Bokjiro Local', phase: 2, fn: async () => { const mod = await import('../src/lib/fetchers/bokjiro-local'); return getExport(mod, 'syncBokjiroLocal')() } },
-    { name: 'subsidy24', label: 'Subsidy24', phase: 1, fn: async () => { const mod = await import('../src/lib/fetchers/subsidy24'); return getExport(mod, 'syncSubsidy24')() } },
-    { name: 'msit-rnd', label: 'MSIT R&D', phase: 1, fn: async () => { const mod = await import('../src/lib/fetchers/msit-rnd'); return getExport(mod, 'syncMsitRnd')() } },
-    { name: 'small-loan-finance', label: 'Small Loan Finance', phase: 1, fn: async () => { const mod = await import('../src/lib/fetchers/small-loan-finance'); return getExport(mod, 'syncSmallLoanFinance')() } },
-    { name: 'loan-comparison', label: 'Loan Comparison', phase: 1, fn: async () => { const mod = await import('../src/lib/fetchers/loan-comparison'); return getExport(mod, 'syncLoanComparison')() } },
-    { name: 'sme-biz-announcement', label: 'SME Biz Announcement', phase: 1, fn: async () => { const mod = await import('../src/lib/fetchers/sme-biz-announcement'); return getExport(mod, 'syncSmeBizAnnouncement')() } },
-    { name: 'bizinfo-odcloud', label: 'Bizinfo Odcloud', phase: 1, fn: async () => { const mod = await import('../src/lib/fetchers/bizinfo-odcloud'); return getExport(mod, 'syncBizinfoOdcloud')() } },
-    { name: 'social-finance', label: 'Social Finance', phase: 1, fn: async () => { const mod = await import('../src/lib/fetchers/social-finance'); return getExport(mod, 'syncSocialFinance')() } },
-    { name: 'youth-policy', label: 'Youth Policy', phase: 1, fn: async () => { const mod = await import('../src/lib/fetchers/youth-policy'); return getExport(mod, 'syncYouthPolicy')() } },
+    { name: 'kstartup', label: 'K-Startup', phase: 1, dataGoKr: true, fn: async () => { const mod = await import('../src/lib/fetchers/kstartup'); return getExport(mod, 'syncKStartup')() } },
+    { name: 'bokjiro-central', label: 'Bokjiro Central', phase: 1, dataGoKr: true, fn: async () => { const mod = await import('../src/lib/fetchers/bokjiro-central'); return getExport(mod, 'syncBokjiroCentral')() } },
+    { name: 'bokjiro-local', label: 'Bokjiro Local', phase: 2, dataGoKr: true, fn: async () => { const mod = await import('../src/lib/fetchers/bokjiro-local'); return getExport(mod, 'syncBokjiroLocal')() } },
+    { name: 'subsidy24', label: 'Subsidy24', phase: 1, dataGoKr: false, fn: async () => { const mod = await import('../src/lib/fetchers/subsidy24'); return getExport(mod, 'syncSubsidy24')() } },
+    { name: 'msit-rnd', label: 'MSIT R&D', phase: 1, dataGoKr: true, fn: async () => { const mod = await import('../src/lib/fetchers/msit-rnd'); return getExport(mod, 'syncMsitRnd')() } },
+    { name: 'small-loan-finance', label: 'Small Loan Finance', phase: 1, dataGoKr: true, fn: async () => { const mod = await import('../src/lib/fetchers/small-loan-finance'); return getExport(mod, 'syncSmallLoanFinance')() } },
+    { name: 'loan-comparison', label: 'Loan Comparison', phase: 1, dataGoKr: true, fn: async () => { const mod = await import('../src/lib/fetchers/loan-comparison'); return getExport(mod, 'syncLoanComparison')() } },
+    { name: 'sme-biz-announcement', label: 'SME Biz Announcement', phase: 1, dataGoKr: true, fn: async () => { const mod = await import('../src/lib/fetchers/sme-biz-announcement'); return getExport(mod, 'syncSmeBizAnnouncement')() } },
+    { name: 'bizinfo-odcloud', label: 'Bizinfo Odcloud', phase: 1, dataGoKr: true, fn: async () => { const mod = await import('../src/lib/fetchers/bizinfo-odcloud'); return getExport(mod, 'syncBizinfoOdcloud')() } },
+    { name: 'social-finance', label: 'Social Finance', phase: 1, dataGoKr: true, fn: async () => { const mod = await import('../src/lib/fetchers/social-finance'); return getExport(mod, 'syncSocialFinance')() } },
+    { name: 'youth-policy', label: 'Youth Policy', phase: 1, dataGoKr: false, fn: async () => { const mod = await import('../src/lib/fetchers/youth-policy'); return getExport(mod, 'syncYouthPolicy')() } },
   ]
 
   const sources = syncSource === 'all'
@@ -113,14 +113,40 @@ async function main() {
   const allResults: Record<string, Record<string, unknown>> = {}
   const allErrors: Record<string, string> = {}
 
-  // Phase 1: bokjiro-central + 비-bokjiro 소스 (concurrency 2)
-  const phase1 = sources.filter(s => s.phase === 1).map(s => ({ name: s.name, fn: s.fn }))
-  if (phase1.length > 0) {
-    console.log(`--- Phase 1: ${phase1.length}개 소스 (concurrency ${CONCURRENCY}) ---\n`)
-    const { results, errors } = await runWithConcurrency(phase1, CONCURRENCY)
-    Object.assign(allResults, results)
-    Object.assign(allErrors, errors)
+  // Phase 1a: 비-data.go.kr 소스 (subsidy24, youth-policy) — 병렬 실행
+  const phase1External = sources
+    .filter(s => s.phase === 1 && !s.dataGoKr)
+    .map(s => ({ name: s.name, fn: s.fn }))
+
+  // Phase 1b: data.go.kr 소스 — 순차 실행 (동일 API 키 rate limit 방지)
+  const phase1DataGoKr = sources
+    .filter(s => s.phase === 1 && s.dataGoKr)
+    .map(s => ({ name: s.name, fn: s.fn }))
+
+  // Phase 1a + 1b 동시 시작 (data.go.kr끼리만 순차, 나머지는 병렬)
+  const phase1Promises: Promise<void>[] = []
+
+  if (phase1External.length > 0) {
+    console.log(`--- Phase 1a: ${phase1External.length}개 비-data.go.kr 소스 (병렬) ---\n`)
+    phase1Promises.push(
+      runWithConcurrency(phase1External, phase1External.length).then(({ results, errors }) => {
+        Object.assign(allResults, results)
+        Object.assign(allErrors, errors)
+      })
+    )
   }
+
+  if (phase1DataGoKr.length > 0) {
+    console.log(`--- Phase 1b: ${phase1DataGoKr.length}개 data.go.kr 소스 (순차) ---\n`)
+    phase1Promises.push(
+      runWithConcurrency(phase1DataGoKr, 1).then(({ results, errors }) => {
+        Object.assign(allResults, results)
+        Object.assign(allErrors, errors)
+      })
+    )
+  }
+
+  await Promise.all(phase1Promises)
 
   // Phase 2: bokjiro-local (central 완료 후 — ctpvNm 지역 덮어쓰기 순서 보장)
   const phase2 = sources.filter(s => s.phase === 2).map(s => ({ name: s.name, fn: s.fn }))

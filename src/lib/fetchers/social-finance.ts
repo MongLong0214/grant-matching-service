@@ -45,6 +45,7 @@ export async function syncSocialFinance(): Promise<{
       const res = await fetchWithRetry(url.toString())
       apiCallsUsed++
 
+      if (res.status === 429) { console.warn(`[SocialFinance] 429 rate limited (${pageNo}페이지), 중단 (${apiCallsUsed} calls)`); break }
       if (res.status === 403 || res.status === 404 || res.status === 500) {
         console.log(`[SocialFinance] ${res.status} (${(await res.text()).slice(0, 200).trim()})`)
         break

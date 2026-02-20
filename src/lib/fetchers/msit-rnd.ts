@@ -46,6 +46,10 @@ export async function syncMsitRnd(): Promise<{
       })
       apiCallsUsed++
 
+      if (res.status === 429) {
+        console.warn(`[MSIT-RnD] 429 rate limited (${pageNo}페이지), 중단 (${apiCallsUsed} calls)`)
+        break
+      }
       if (!res.ok) {
         throw new Error(`MSIT R&D API error: ${res.status} ${res.statusText}`)
       }

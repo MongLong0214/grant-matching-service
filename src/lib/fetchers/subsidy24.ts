@@ -29,7 +29,7 @@ export async function syncSubsidy24(): Promise<{
 }> {
   const apiKey = process.env.SUBSIDY24_API_KEY
   if (!apiKey) {
-    console.log('[Subsidy24] SUBSIDY24_API_KEY not set, skipping sync')
+    console.log('[Subsidy24] SUBSIDY24_API_KEY 미설정, 건너뜀')
     return { fetched: 0, inserted: 0, updated: 0, skipped: 0, apiCallsUsed: 0 }
   }
 
@@ -53,6 +53,10 @@ export async function syncSubsidy24(): Promise<{
       const res = await fetchWithRetry(url.toString())
       apiCallsUsed++
 
+      if (res.status === 429) {
+        console.warn(`[Subsidy24] 429 rate limited (${page}페이지), 중단 (${apiCallsUsed} calls)`)
+        break
+      }
       if (!res.ok) {
         throw new Error(`Subsidy24 API error: ${res.status} ${res.statusText}`)
       }
@@ -87,7 +91,7 @@ export async function syncSubsidy24(): Promise<{
 
       // 사용자구분 기반 service_type 결정
       const userCategory = item.사용자구분 || ''
-      let serviceType = 'both'
+      let serviceType: 'personal' | 'business' | 'both' = 'both'
       if (userCategory.includes('개인') && !userCategory.includes('법인') && !userCategory.includes('기업')) {
         serviceType = 'personal'
       } else if (!userCategory.includes('개인') && (userCategory.includes('법인') || userCategory.includes('기업'))) {

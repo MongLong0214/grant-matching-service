@@ -48,6 +48,10 @@ export async function syncSmallLoanFinance(): Promise<{
       const res = await fetchWithRetry(url.toString())
       apiCallsUsed++
 
+      if (res.status === 429) {
+        console.warn(`[SmallLoanFinance] 429 rate limited (${pageNo}페이지), 중단 (${apiCallsUsed} calls)`)
+        break
+      }
       if (res.status === 404 || res.status === 500) {
         console.log(`[SmallLoanFinance] ${res.status} — API 키 또는 권한 확인 필요`)
         break

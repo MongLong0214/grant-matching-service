@@ -47,11 +47,12 @@ const ENDPOINTS = {
   "2024": "https://api.odcloud.kr/api/3034791/v1/uddi:80a74cfd-55d2-4dd3-81c7-d01567d0b3c4",
 }
 
+// 429 시 null 반환 → 호출자가 즉시 중단
 async function fetchPage(
   endpoint: string,
   apiKey: string,
   page: number
-): Promise<BizinfoApiResponse> {
+): Promise<BizinfoApiResponse | null> {
   const url = `${endpoint}?serviceKey=${encodeURIComponent(apiKey)}&page=${page}&perPage=1000`
 
   const response = await fetchWithRetry(url, {
@@ -59,6 +60,11 @@ async function fetchPage(
       Authorization: `Infuser ${apiKey}`,
     },
   })
+
+  if (response.status === 429) {
+    console.warn(`[Bizinfo] 429 rate limited (${page}페이지), 중단`)
+    return null
+  }
 
   if (!response.ok) {
     throw new Error(`Bizinfo API error: ${response.status} ${response.statusText}`)
@@ -74,35 +80,35 @@ async function fetchYearData(
   const endpoint = ENDPOINTS[year]
   const allPrograms: BizinfoProgram[] = []
 
-  console.log(`[Bizinfo] Fetching ${year} data...`)
+  console.log(`[Bizinfo] ${year}년 데이터 수집 중...`)
 
   // 첫 페이지로 총 개수 확인
   const firstPage = await fetchPage(endpoint, apiKey, 1)
+  if (!firstPage) return allPrograms
   allPrograms.push(...firstPage.data)
 
   const totalPages = Math.ceil(firstPage.totalCount / firstPage.perPage)
-  console.log(`[Bizinfo] ${year}: Total ${firstPage.totalCount} programs, ${totalPages} pages`)
+  console.log(`[Bizinfo] ${year}년: 총 ${firstPage.totalCount}건, ${totalPages}페이지`)
 
   // 나머지 페이지 가져오기
   for (let page = 2; page <= totalPages; page++) {
     const pageData = await fetchPage(endpoint, apiKey, page)
+    if (!pageData) break  // 429 즉시 중단, 수집된 데이터 보존
     allPrograms.push(...pageData.data)
-    console.log(`[Bizinfo] ${year}: Fetched page ${page}/${totalPages}`)
+    console.log(`[Bizinfo] ${year}년: ${page}/${totalPages}페이지 수집`)
   }
 
-  console.log(`[Bizinfo] ${year}: Fetched ${allPrograms.length} programs`)
+  console.log(`[Bizinfo] ${year}년: ${allPrograms.length}건 수집 완료`)
   return allPrograms
 }
 
 // 2025 데이터 우선, 사업명+소관기관 키 기준 중복 제거
 export async function fetchAllPrograms(apiKey: string): Promise<BizinfoProgram[]> {
-  console.log("[Bizinfo] Starting data fetch...")
+  console.log("[Bizinfo] 데이터 수집 시작...")
 
-  // 2025, 2024 데이터 병렬로 가져오기
-  const [programs2025, programs2024] = await Promise.all([
-    fetchYearData("2025", apiKey),
-    fetchYearData("2024", apiKey),
-  ])
+  // 순차 실행 (동일 API 키 rate limit 방지)
+  const programs2025 = await fetchYearData("2025", apiKey)
+  const programs2024 = await fetchYearData("2024", apiKey)
 
   // 중복 제거: 사업명 + 소관기관 조합을 키로 사용
   const programMap = new Map<string, BizinfoProgram>()
@@ -120,9 +126,7 @@ export async function fetchAllPrograms(apiKey: string): Promise<BizinfoProgram[]
   }
 
   const uniquePrograms = Array.from(programMap.values())
-  console.log(
-    `[Bizinfo] Deduplicated: ${programs2025.length + programs2024.length} → ${uniquePrograms.length} programs`
-  )
+  console.log(`[Bizinfo] 중복 제거: ${programs2025.length + programs2024.length} → ${uniquePrograms.length}건`)
 
   return uniquePrograms
 }

@@ -103,14 +103,18 @@ export async function fetchKStartup(apiKey: string): Promise<{
     apiCallsUsed++
 
     if (res.status === 403) {
-      console.log('[K-Startup] API returned 403 - check API key/subscription')
+      console.log('[K-Startup] 403 — API 키 또는 활용신청 확인 필요')
       return { items: [], totalCount: 0, apiCallsUsed }
     }
 
+    if (res.status === 429) {
+      console.warn(`[K-Startup] 429 rate limited (${page}페이지), 중단 (${apiCallsUsed} calls)`)
+      break
+    }
+
     if (res.status === 500 || res.status === 404) {
-      const body = await res.text()
-      console.log(`[K-Startup] API returned ${res.status} (${body.trim()}) - API key may not be authorized for this service. Apply at data.go.kr`)
-      return { items: [], totalCount: 0, apiCallsUsed }
+      console.log(`[K-Startup] ${res.status} — API 키 미승인 또는 일시 오류`)
+      break  // 수집된 데이터 보존
     }
 
     if (!res.ok) {

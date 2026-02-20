@@ -155,12 +155,6 @@ export async function syncYouthPolicy(): Promise<{
       if (!res.ok) { console.log(`[YouthPolicy] API 오류: ${res.status}`); break }
 
       const text = await res.text()
-
-      // 첫 페이지 응답 구조 로깅 (API 응답 포맷 검증용)
-      if (pageIndex === 1) {
-        console.log(`[YouthPolicy] 응답 미리보기 (${text.length}자): ${text.slice(0, 300)}...`)
-      }
-
       const parsed = parseYouthPolicyResponse(text)
       if (parsed.error) { console.log(`[YouthPolicy] 파싱 오류: ${parsed.error}`); break }
 

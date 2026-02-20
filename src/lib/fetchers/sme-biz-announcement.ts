@@ -66,6 +66,7 @@ export async function syncSmeBizAnnouncement(): Promise<{
       const res = await fetchWithRetry(url.toString())
       apiCallsUsed++
 
+      if (res.status === 429) { console.warn(`[SmeBizAnnouncement] 429 rate limited (${page}페이지), 중단 (${apiCallsUsed} calls)`); break }
       if (res.status === 403) { console.log('[SmeBizAnnouncement] 403 — API 키 확인 필요'); break }
       if (res.status === 404 || res.status === 500) { console.log(`[SmeBizAnnouncement] ${res.status}`); break }
       if (!res.ok) { console.log(`[SmeBizAnnouncement] API 오류: ${res.status}`); break }

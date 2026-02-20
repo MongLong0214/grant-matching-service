@@ -67,6 +67,7 @@ export async function syncLoanComparison(): Promise<{
       const res = await fetchWithRetry(url.toString())
       apiCallsUsed++
 
+      if (res.status === 429) { console.warn(`[LoanComparison] 429 rate limited (${pageNo}페이지), 중단 (${apiCallsUsed} calls)`); break }
       if (res.status === 404 || res.status === 500) { console.log(`[LoanComparison] ${res.status}`); break }
       if (!res.ok) throw new Error(`LoanComparison API 오류: ${res.status} ${res.statusText}`)
 

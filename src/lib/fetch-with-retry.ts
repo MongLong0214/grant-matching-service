@@ -2,6 +2,7 @@ interface FetchWithRetryOptions extends RequestInit {
   maxRetries?: number
   baseDelayMs?: number
   timeoutMs?: number
+  retry429?: boolean  // 429 재시도 여부 (기본 false — 쿼터형 API는 재시도 무의미)
 }
 
 /**
@@ -11,32 +12,32 @@ interface FetchWithRetryOptions extends RequestInit {
  * @returns 응답 객체
  *
  * - 5xx/타임아웃: 최대 3회 지수 백오프 재시도 (1s, 2s, 4s)
- * - 429: 최대 3회 재시도 (Retry-After 존중, 기본 3s/6s/12s)
+ * - 429: 기본 즉시 반환 (retry429: true 시 최대 3회 재시도)
  * - 4xx: 즉시 반환 (클라이언트 에러는 재시도 무의미)
  */
 export async function fetchWithRetry(
   url: string,
   options: FetchWithRetryOptions = {}
 ): Promise<Response> {
-  const { maxRetries = 3, baseDelayMs = 1000, timeoutMs = 30000, ...fetchOptions } = options
+  const { maxRetries = 3, baseDelayMs = 1000, timeoutMs = 30000, retry429 = false, ...fetchOptions } = options
 
   let lastError: Error | null = null
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), timeoutMs)
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), timeoutMs)
 
+    try {
       const response = await fetch(url, {
         ...fetchOptions,
         signal: controller.signal,
       })
 
-      clearTimeout(timeout)
+      clearTimeout(timer)
 
-      // 429: 쿼터 초과 — 재시도 (Retry-After 헤더 존중)
+      // 429: 쿼터 초과 — retry429 옵션에 따라 재시도 또는 즉시 반환
       if (response.status === 429) {
-        if (attempt < maxRetries) {
+        if (retry429 && attempt < maxRetries) {
           const delay = parseRetryAfter(response, baseDelayMs, attempt)
           await sleep(delay)
           continue
@@ -61,6 +62,7 @@ export async function fetchWithRetry(
 
       return response
     } catch (error) {
+      clearTimeout(timer)
       lastError = error instanceof Error ? error : new Error(String(error))
 
       // 타임아웃/네트워크 에러: 재시도 대상
