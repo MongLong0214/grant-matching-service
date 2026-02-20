@@ -7,7 +7,7 @@ import {
 } from './sync-helpers'
 
 // 한국고용정보원_청년정책 (온통청년/온라인청년센터)
-const YOUTH_POLICY_API_URL = 'https://www.youthcenter.go.kr/go/ythip/getPlcy'
+const YOUTH_POLICY_API_URL = 'https://www.youthcenter.go.kr/opi/youthPlcyList.do'
 
 interface YouthPolicyItem {
   bizId?: string             // 사업 고유ID
@@ -141,11 +141,16 @@ export async function syncYouthPolicy(): Promise<{
       url.searchParams.set('pageIndex', String(pageIndex))
       url.searchParams.set('display', String(display))
 
-      const res = await fetchWithRetry(url.toString())
+      // redirect: 'manual' — 서버 장애 시 302 리다이렉트 타임아웃(120초) 방지
+      const res = await fetchWithRetry(url.toString(), { redirect: 'manual' })
       apiCallsUsed++
 
+      if (res.status >= 300 && res.status < 400) {
+        console.log(`[YouthPolicy] ${res.status} 리다이렉트 — API 서버 점검 또는 장애`)
+        break
+      }
       if (res.status === 403 || res.status === 401) {
-        console.log(`[YouthPolicy] ${res.status} 응답 - API 키 확인 필요`)
+        console.log(`[YouthPolicy] ${res.status} 응답 — API 키 확인 필요`)
         break
       }
       if (res.status === 429) {
