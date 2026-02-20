@@ -2,7 +2,7 @@ import { extractEligibility } from '@/lib/extraction'
 import { fetchKStartup } from './kstartup-helpers'
 import {
   createSyncClient, startSyncLog, completeSyncLog, failSyncLog,
-  upsertSupport, parseDate, mapCategory,
+  batchUpsertSupports, parseDate, mapCategory,
 } from './sync-helpers'
 
 export async function syncKStartup(): Promise<{
@@ -30,6 +30,7 @@ export async function syncKStartup(): Promise<{
     let inserted = 0
     let skipped = 0
 
+    const records: Record<string, unknown>[] = []
     for (const item of items) {
       const itemId = item.bizPblancId || item.pblancNm
       if (!itemId) { skipped++; continue }
@@ -45,11 +46,11 @@ export async function syncKStartup(): Promise<{
       const title = item.pblancNm || item.bizPblancNm || ''
       const extraction = extractEligibility(eligibilityTexts, title, item.jrsdInsttNm || item.excInsttNm)
 
-      const record = {
+      records.push({
         title,
         organization: item.jrsdInsttNm || item.excInsttNm || '미상',
         category: mapCategory(item.bizPrchPtrnCdNm, item.sprtField),
-        start_date: null as string | null,
+        start_date: null,
         end_date: parseDate(item.pblancEndDt || item.rcptEndDt),
         detail_url: item.detailUrl || `https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=${itemId}`,
         target_regions: extraction.regions,
@@ -62,7 +63,7 @@ export async function syncKStartup(): Promise<{
         target_business_age_max: extraction.businessAgeMaxMonths,
         target_founder_age_min: extraction.founderAgeMin,
         target_founder_age_max: extraction.founderAgeMax,
-        amount: null as string | null,
+        amount: null,
         is_active: true,
         source: 'kstartup',
         external_id: externalId,
@@ -78,12 +79,12 @@ export async function syncKStartup(): Promise<{
         target_employment_status: extraction.employmentStatus.length > 0 ? extraction.employmentStatus : null,
         benefit_categories: extraction.benefitCategories.length > 0 ? extraction.benefitCategories : null,
         region_scope: extraction.regionScope,
-      }
-
-      const result = await upsertSupport(supabase, record)
-      if (result === 'skipped') { skipped++; continue }
-      inserted++
+      })
     }
+
+    const batchResult = await batchUpsertSupports(supabase, records, 'K-Startup')
+    inserted = batchResult.inserted
+    skipped += batchResult.skipped
 
     await completeSyncLog(supabase, logId, { fetched: items.length, inserted, updated: 0, skipped, apiCallsUsed })
     return { fetched: items.length, inserted, updated: 0, skipped, apiCallsUsed }

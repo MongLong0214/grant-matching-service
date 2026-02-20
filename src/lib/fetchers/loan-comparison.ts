@@ -2,7 +2,7 @@ import { extractEligibility } from '@/lib/extraction'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import {
   createSyncClient, startSyncLog, completeSyncLog, failSyncLog,
-  upsertSupport, getXmlField, parseXmlItems, parseJsonItems,
+  batchUpsertSupports, getXmlField, parseXmlItems, parseJsonItems,
 } from './sync-helpers'
 
 // 대출 상품 비교 정보 서비스 (XML only)
@@ -99,6 +99,7 @@ export async function syncLoanComparison(): Promise<{
 
     console.log(`[LoanComparison] ${allItems.length}건 수집, 처리 시작`)
 
+    const records: Record<string, unknown>[] = []
     for (const item of allItems) {
       const productKey = item.prdt_cd || `${item.prdt_nm || ''}_${item.fnc_instt_nm || ''}`
       if (!productKey || productKey === '_') { skipped++; continue }
@@ -120,11 +121,11 @@ export async function syncLoanComparison(): Promise<{
       if (item.ln_trm) amountParts.push(`기간: ${item.ln_trm}`)
       if (item.prdt_se) amountParts.push(`구분: ${item.prdt_se}`)
 
-      const record = {
+      records.push({
         title: item.prdt_nm || '대출상품',
         organization: item.fnc_instt_nm || '서민금융진흥원',
         category: '금융',
-        start_date: null as string | null, end_date: null as string | null,
+        start_date: null, end_date: null,
         detail_url: '',
         target_regions: extraction.regions, target_business_types: extraction.businessTypes,
         target_employee_min: extraction.employeeMin, target_employee_max: extraction.employeeMax,
@@ -134,7 +135,7 @@ export async function syncLoanComparison(): Promise<{
         amount: amountParts.length > 0 ? amountParts.join(' / ') : null,
         is_active: true, source: 'loan-comparison', external_id: externalId,
         raw_eligibility_text: item.trget || null,
-        raw_exclusion_text: null as string | null, raw_preference_text: item.prdt_cn || null,
+        raw_exclusion_text: null, raw_preference_text: item.prdt_cn || null,
         extraction_confidence: extraction.confidence, service_type: 'personal',
         target_age_min: extraction.ageMin, target_age_max: extraction.ageMax,
         target_household_types: extraction.householdTypes.length > 0 ? extraction.householdTypes : null,
@@ -142,12 +143,12 @@ export async function syncLoanComparison(): Promise<{
         target_employment_status: extraction.employmentStatus.length > 0 ? extraction.employmentStatus : null,
         benefit_categories: extraction.benefitCategories.length > 0 ? extraction.benefitCategories : null,
         region_scope: extraction.regionScope,
-      }
-
-      const result = await upsertSupport(supabase, record)
-      if (result === 'upserted') inserted++
-      else skipped++
+      })
     }
+
+    const batchResult = await batchUpsertSupports(supabase, records, 'LoanComparison')
+    inserted = batchResult.inserted
+    skipped += batchResult.skipped
 
     console.log(`[LoanComparison] 완료: ${inserted} 신규, ${updated} 갱신, ${skipped} 건너뜀`)
     await completeSyncLog(supabase, logId, { fetched: allItems.length, inserted, updated, skipped, apiCallsUsed })

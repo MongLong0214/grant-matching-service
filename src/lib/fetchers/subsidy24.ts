@@ -2,7 +2,7 @@ import { extractEligibility } from '@/lib/extraction'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import {
   createSyncClient, startSyncLog, completeSyncLog, failSyncLog,
-  upsertSupport, mapCategory,
+  batchUpsertSupports, mapCategory,
 } from './sync-helpers'
 
 // 행정안전부_보조금24 (공공서비스 정보) - odcloud API v3
@@ -78,6 +78,7 @@ export async function syncSubsidy24(): Promise<{
       await new Promise((r) => setTimeout(r, 100))
     }
 
+    const records: Record<string, unknown>[] = []
     for (const item of allItems) {
       if (!item.서비스ID) { skipped++; continue }
       const externalId = `subsidy24-${item.서비스ID}`
@@ -98,12 +99,12 @@ export async function syncSubsidy24(): Promise<{
         serviceType = 'business'
       }
 
-      const record = {
+      records.push({
         title: item.서비스명,
         organization: item.부서명 || '행정안전부',
         category: mapCategory(item.서비스분야),
-        start_date: null as string | null,
-        end_date: null as string | null,
+        start_date: null,
+        end_date: null,
         detail_url: item.상세조회URL || `https://www.gov.kr/portal/rcvfvrSvc/dtlEx/${item.서비스ID}`,
         target_regions: extraction.regions,
         target_business_types: extraction.businessTypes,
@@ -115,12 +116,12 @@ export async function syncSubsidy24(): Promise<{
         target_business_age_max: extraction.businessAgeMaxMonths,
         target_founder_age_min: extraction.founderAgeMin,
         target_founder_age_max: extraction.founderAgeMax,
-        amount: null as string | null,
+        amount: null,
         is_active: true,
         source: 'subsidy24',
         external_id: externalId,
         raw_eligibility_text: item.서비스목적요약 || null,
-        raw_exclusion_text: null as string | null,
+        raw_exclusion_text: null,
         raw_preference_text: item.선정기준 || null,
         extraction_confidence: extraction.confidence,
         service_type: serviceType,
@@ -131,12 +132,12 @@ export async function syncSubsidy24(): Promise<{
         target_employment_status: extraction.employmentStatus.length > 0 ? extraction.employmentStatus : null,
         benefit_categories: extraction.benefitCategories.length > 0 ? extraction.benefitCategories : null,
         region_scope: extraction.regionScope,
-      }
-
-      const result = await upsertSupport(supabase, record)
-      if (result === 'skipped') { skipped++; continue }
-      inserted++
+      })
     }
+
+    const batchResult = await batchUpsertSupports(supabase, records, 'Subsidy24')
+    inserted = batchResult.inserted
+    skipped += batchResult.skipped
 
     await completeSyncLog(supabase, logId, { fetched: allItems.length, inserted, updated: 0, skipped, apiCallsUsed })
     return { fetched: allItems.length, inserted, updated: 0, skipped, apiCallsUsed }

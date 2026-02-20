@@ -3,7 +3,7 @@ import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import { type MsitRndItem, parseXmlResponse } from './msit-rnd-parser'
 import {
   createSyncClient, startSyncLog, completeSyncLog, failSyncLog,
-  upsertSupport, parseDate, mapCategory,
+  batchUpsertSupports, parseDate, mapCategory,
 } from './sync-helpers'
 
 // 과학기술정보통신부_사업공고
@@ -68,6 +68,7 @@ export async function syncMsitRnd(): Promise<{
       await new Promise((r) => setTimeout(r, 100))
     }
 
+    const records: Record<string, unknown>[] = []
     for (const item of allItems) {
       if (!item.subject) { skipped++; continue }
       // subject를 해시하여 고유 ID 생성 (이 API는 별도 ID 필드가 없음)
@@ -79,12 +80,12 @@ export async function syncMsitRnd(): Promise<{
       // MSIT는 기술부처이므로 카테고리 미매칭 시 '기술'을 기본값으로 사용
       const cat = mapCategory(item.deptName)
 
-      const record = {
+      records.push({
         title: item.subject,
         organization: item.deptName || '과학기술정보통신부',
         category: cat === '기타' ? '기술' : cat,
         start_date: parseDate(item.pressDt),
-        end_date: null as string | null,
+        end_date: null,
         detail_url: item.viewUrl || 'https://www.msit.go.kr/bbs/list.do?sCode=user&mId=113&mPid=112',
         target_regions: extraction.regions,
         target_business_types: extraction.businessTypes,
@@ -96,13 +97,13 @@ export async function syncMsitRnd(): Promise<{
         target_business_age_max: extraction.businessAgeMaxMonths,
         target_founder_age_min: extraction.founderAgeMin,
         target_founder_age_max: extraction.founderAgeMax,
-        amount: null as string | null,
+        amount: null,
         is_active: true,
         source: 'msit-rnd',
         external_id: externalId,
         raw_eligibility_text: item.subject || null,
-        raw_exclusion_text: null as string | null,
-        raw_preference_text: null as string | null,
+        raw_exclusion_text: null,
+        raw_preference_text: null,
         extraction_confidence: extraction.confidence,
         service_type: 'business',
         target_age_min: extraction.ageMin,
@@ -112,12 +113,12 @@ export async function syncMsitRnd(): Promise<{
         target_employment_status: extraction.employmentStatus.length > 0 ? extraction.employmentStatus : null,
         benefit_categories: extraction.benefitCategories.length > 0 ? extraction.benefitCategories : null,
         region_scope: extraction.regionScope,
-      }
-
-      const result = await upsertSupport(supabase, record)
-      if (result === 'skipped') { skipped++; continue }
-      inserted++
+      })
     }
+
+    const batchResult = await batchUpsertSupports(supabase, records, 'MSIT-RnD')
+    inserted = batchResult.inserted
+    skipped += batchResult.skipped
 
     await completeSyncLog(supabase, logId, { fetched: allItems.length, inserted, updated: 0, skipped, apiCallsUsed })
     return { fetched: allItems.length, inserted, updated: 0, skipped, apiCallsUsed }

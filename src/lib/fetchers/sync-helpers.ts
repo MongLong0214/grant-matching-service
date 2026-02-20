@@ -64,7 +64,7 @@ export async function failSyncLog(
   }).eq('id', logId)
 }
 
-/** supports 테이블 upsert (external_id 기준, native upsert) */
+/** supports 테이블 upsert (external_id 기준, native upsert) — 단건용 */
 export async function upsertSupport(
   supabase: SupabaseClient,
   record: Record<string, unknown>,
@@ -77,6 +77,39 @@ export async function upsertSupport(
     return 'skipped'
   }
   return 'upserted'
+}
+
+const BATCH_SIZE = 200
+
+/** supports 테이블 배치 upsert — 대량 데이터 처리용 (Supabase 502 방지) */
+export async function batchUpsertSupports(
+  supabase: SupabaseClient,
+  records: Record<string, unknown>[],
+  source: string,
+): Promise<{ inserted: number; skipped: number }> {
+  let inserted = 0
+  let skipped = 0
+
+  for (let i = 0; i < records.length; i += BATCH_SIZE) {
+    const batch = records.slice(i, i + BATCH_SIZE)
+    const { error } = await supabase
+      .from('supports')
+      .upsert(batch, { onConflict: 'external_id' })
+
+    if (error) {
+      console.error(`[${source}] 배치 upsert 오류 (${i}~${i + batch.length}): ${error.message}`)
+      skipped += batch.length
+    } else {
+      inserted += batch.length
+    }
+
+    // Supabase 과부하 방지: 배치 간 50ms 대기
+    if (i + BATCH_SIZE < records.length) {
+      await new Promise((r) => setTimeout(r, 50))
+    }
+  }
+
+  return { inserted, skipped }
 }
 
 /** XML 응답에서 totalCount 추출 */

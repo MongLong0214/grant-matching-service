@@ -2,7 +2,7 @@ import { extractEligibility } from '@/lib/extraction'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import {
   createSyncClient, startSyncLog, completeSyncLog, failSyncLog,
-  upsertSupport, parseJsonItems,
+  batchUpsertSupports, parseJsonItems,
 } from './sync-helpers'
 
 // 금융위원회_사회적금융 지원정보
@@ -67,6 +67,7 @@ export async function syncSocialFinance(): Promise<{
 
     console.log(`[SocialFinance] ${allItems.length}건 수집, 처리 시작`)
 
+    const records: Record<string, unknown>[] = []
     for (const item of allItems) {
       const title = item.sprtBizNm
       if (!title) { skipped++; continue }
@@ -77,33 +78,33 @@ export async function syncSocialFinance(): Promise<{
         title, item.operInstNm || item.sprvsnInstNm,
       )
 
-      const record = {
+      records.push({
         title, organization: item.operInstNm || item.sprvsnInstNm || '금융위원회',
         category: '금융',
-        start_date: null as string | null, end_date: null as string | null,
+        start_date: null, end_date: null,
         detail_url: '',
         target_regions: extraction.regions, target_business_types: extraction.businessTypes,
         target_employee_min: extraction.employeeMin, target_employee_max: extraction.employeeMax,
         target_revenue_min: extraction.revenueMin, target_revenue_max: extraction.revenueMax,
         target_business_age_min: extraction.businessAgeMinMonths, target_business_age_max: extraction.businessAgeMaxMonths,
         target_founder_age_min: extraction.founderAgeMin, target_founder_age_max: extraction.founderAgeMax,
-        amount: null as string | null,
+        amount: null,
         is_active: true, source: 'social-finance', external_id: externalId,
         raw_eligibility_text: item.sprtTrgtDtlCn || item.sprtTrgtNm || null,
-        raw_exclusion_text: null as string | null, raw_preference_text: item.sprtMthdCn || null,
-        extraction_confidence: extraction.confidence, service_type: 'both' as const,
+        raw_exclusion_text: null, raw_preference_text: item.sprtMthdCn || null,
+        extraction_confidence: extraction.confidence, service_type: 'both',
         target_age_min: extraction.ageMin, target_age_max: extraction.ageMax,
         target_household_types: extraction.householdTypes.length > 0 ? extraction.householdTypes : null,
         target_income_levels: extraction.incomeLevels.length > 0 ? extraction.incomeLevels : null,
         target_employment_status: extraction.employmentStatus.length > 0 ? extraction.employmentStatus : null,
         benefit_categories: extraction.benefitCategories.length > 0 ? extraction.benefitCategories : null,
         region_scope: extraction.regionScope,
-      }
-
-      const result = await upsertSupport(supabase, record)
-      if (result === 'upserted') inserted++
-      else skipped++
+      })
     }
+
+    const batchResult = await batchUpsertSupports(supabase, records, 'SocialFinance')
+    inserted = batchResult.inserted
+    skipped += batchResult.skipped
 
     console.log(`[SocialFinance] 완료: ${inserted} 신규, ${updated} 갱신, ${skipped} 건너뜀`)
     await completeSyncLog(supabase, logId, { fetched: allItems.length, inserted, updated, skipped, apiCallsUsed })

@@ -3,7 +3,7 @@ import { extractEligibility } from '@/lib/extraction'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import {
   createSyncClient, startSyncLog, completeSyncLog, failSyncLog,
-  upsertSupport, mapCategory, getXmlField,
+  batchUpsertSupports, mapCategory, getXmlField,
 } from './sync-helpers'
 
 // 한국고용정보원_청년정책 (온통청년/온라인청년센터)
@@ -181,6 +181,7 @@ export async function syncYouthPolicy(): Promise<{
 
     console.log(`[YouthPolicy] ${allItems.length}건 수집, 처리 시작`)
 
+    const records: Record<string, unknown>[] = []
     for (const item of allItems) {
       const title = item.polyBizSjnm
       if (!title) { skipped++; continue }
@@ -207,12 +208,12 @@ export async function syncYouthPolicy(): Promise<{
         }
       }
 
-      const record = {
+      records.push({
         title,
         organization: org,
         category: mapCategory(item.sporCn, item.polyItcnCn, title),
-        start_date: null as string | null,
-        end_date: null as string | null,
+        start_date: null,
+        end_date: null,
         detail_url: item.rqutUrla || 'https://www.youthcenter.go.kr/youthPolicy/ythPlcyTotalSearch',
         target_regions: extraction.regions,
         target_business_types: extraction.businessTypes,
@@ -224,7 +225,7 @@ export async function syncYouthPolicy(): Promise<{
         target_business_age_max: extraction.businessAgeMaxMonths,
         target_founder_age_min: extraction.founderAgeMin,
         target_founder_age_max: extraction.founderAgeMax,
-        amount: null as string | null,
+        amount: null,
         is_active: true,
         source: 'youth-policy',
         external_id: externalId,
@@ -240,12 +241,12 @@ export async function syncYouthPolicy(): Promise<{
         target_employment_status: extraction.employmentStatus.length > 0 ? extraction.employmentStatus : null,
         benefit_categories: extraction.benefitCategories.length > 0 ? extraction.benefitCategories : null,
         region_scope: extraction.regionScope,
-      }
-
-      const result = await upsertSupport(supabase, record)
-      if (result === 'upserted') inserted++
-      else skipped++
+      })
     }
+
+    const batchResult = await batchUpsertSupports(supabase, records, 'YouthPolicy')
+    inserted = batchResult.inserted
+    skipped += batchResult.skipped
 
     const fetched = allItems.length
     console.log(`[YouthPolicy] 완료: ${inserted} 신규, ${skipped} 건너뜀`)

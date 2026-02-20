@@ -2,7 +2,7 @@ import { extractEligibility } from '@/lib/extraction'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import {
   createSyncClient, startSyncLog, completeSyncLog, failSyncLog,
-  upsertSupport, getXmlField, parseXmlItems, parseJsonItems, parseDate, mapCategory,
+  batchUpsertSupports, getXmlField, parseXmlItems, parseJsonItems, parseDate, mapCategory,
 } from './sync-helpers'
 
 // 중소벤처기업부_중소기업 사업 정보 v2 (data.go.kr, XML 응답)
@@ -97,6 +97,7 @@ export async function syncSmeBizAnnouncement(): Promise<{
 
     console.log(`[SmeBizAnnouncement] ${allItems.length}건 수집, ${apiCallsUsed}회 API 호출`)
 
+    const records: Record<string, unknown>[] = []
     for (const item of allItems) {
       const itemId = item.pbancSn || item.pbancTtl || item.pbancNm
       if (!itemId) { skipped++; continue }
@@ -108,7 +109,7 @@ export async function syncSmeBizAnnouncement(): Promise<{
         title, item.insttNm || item.jrsdInsttNm,
       )
 
-      const record = {
+      records.push({
         title, organization: item.insttNm || item.jrsdInsttNm || '중소벤처기업부',
         category: mapCategory(title, item.bizNm),
         start_date: parseDate(item.pbancBgngDt || item.rcptBgngDt),
@@ -119,10 +120,10 @@ export async function syncSmeBizAnnouncement(): Promise<{
         target_revenue_min: extraction.revenueMin, target_revenue_max: extraction.revenueMax,
         target_business_age_min: extraction.businessAgeMinMonths, target_business_age_max: extraction.businessAgeMaxMonths,
         target_founder_age_min: extraction.founderAgeMin, target_founder_age_max: extraction.founderAgeMax,
-        amount: null as string | null, is_active: true,
+        amount: null, is_active: true,
         source: 'sme-biz-announcement', external_id: externalId,
         raw_eligibility_text: item.trgtJgCn || item.bsnsSumryCn || null,
-        raw_exclusion_text: item.excptMtr || null, raw_preference_text: null as string | null,
+        raw_exclusion_text: item.excptMtr || null, raw_preference_text: null,
         extraction_confidence: extraction.confidence, service_type: 'business',
         target_age_min: extraction.ageMin, target_age_max: extraction.ageMax,
         target_household_types: extraction.householdTypes.length > 0 ? extraction.householdTypes : null,
@@ -130,12 +131,12 @@ export async function syncSmeBizAnnouncement(): Promise<{
         target_employment_status: extraction.employmentStatus.length > 0 ? extraction.employmentStatus : null,
         benefit_categories: extraction.benefitCategories.length > 0 ? extraction.benefitCategories : null,
         region_scope: extraction.regionScope,
-      }
-
-      const result = await upsertSupport(supabase, record)
-      if (result === 'upserted') inserted++
-      else skipped++
+      })
     }
+
+    const batchResult = await batchUpsertSupports(supabase, records, 'SmeBizAnnouncement')
+    inserted = batchResult.inserted
+    skipped += batchResult.skipped
 
     await completeSyncLog(supabase, logId, { fetched: allItems.length, inserted, updated, skipped, apiCallsUsed })
     return { fetched: allItems.length, inserted, updated, skipped, apiCallsUsed }

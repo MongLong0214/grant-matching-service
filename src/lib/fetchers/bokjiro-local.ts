@@ -3,7 +3,7 @@ import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import { parseServListItems } from './bokjiro-local-helpers'
 import {
   createSyncClient, startSyncLog, completeSyncLog, failSyncLog,
-  upsertSupport, getTotalCount,
+  batchUpsertSupports, getTotalCount,
 } from './sync-helpers'
 
 // 보건복지부_지자체 복지 상세정보
@@ -80,6 +80,7 @@ export async function syncBokjiroLocal(): Promise<{
         break
       }
 
+      const pageRecords: Record<string, unknown>[] = []
       for (const item of items) {
         if (!item.servId) { skipped++; continue }
         // bokjiro-central과 동일 API → external_id 통합. local이 ctpvNm 기반 지역 매핑으로 더 정확하므로 덮어씀
@@ -97,12 +98,12 @@ export async function syncBokjiroLocal(): Promise<{
         const hasBizKeywords = /기업|사업자|소상공인|법인|자영업/.test(item.servDgst || '')
         const serviceType = hasBizKeywords ? 'both' : 'personal'
 
-        const record = {
+        pageRecords.push({
           title: item.servNm,
           organization: item.jurMnofNm || item.ctpvNm || '지자체',
-          category: '기타' as const,
-          start_date: null as string | null,
-          end_date: null as string | null,
+          category: '기타',
+          start_date: null,
+          end_date: null,
           detail_url: `https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=${item.servId}`,
           target_regions: regions,
           target_business_types: extraction.businessTypes,
@@ -114,12 +115,12 @@ export async function syncBokjiroLocal(): Promise<{
           target_business_age_max: extraction.businessAgeMaxMonths,
           target_founder_age_min: extraction.founderAgeMin,
           target_founder_age_max: extraction.founderAgeMax,
-          amount: null as string | null,
+          amount: null,
           is_active: true,
           source: 'bokjiro-local',
           external_id: externalId,
           raw_eligibility_text: item.servDgst || null,
-          raw_exclusion_text: null as string | null,
+          raw_exclusion_text: null,
           raw_preference_text: item.trgterIndvdlNmArray || null,
           extraction_confidence: {
             ...extraction.confidence,
@@ -133,12 +134,12 @@ export async function syncBokjiroLocal(): Promise<{
           target_employment_status: extraction.employmentStatus.length > 0 ? extraction.employmentStatus : null,
           benefit_categories: extraction.benefitCategories.length > 0 ? extraction.benefitCategories : null,
           region_scope: ctpvRegion ? 'regional' : extraction.regionScope,
-        }
-
-        const result = await upsertSupport(supabase, record)
-        if (result === 'skipped') { skipped++; continue }
-        inserted++
+        })
       }
+
+      const batchResult = await batchUpsertSupports(supabase, pageRecords, 'Bokjiro-Local')
+      inserted += batchResult.inserted
+      skipped += batchResult.skipped
 
       const processedIndex = (pageNo - 1) * 1000 + items.length - 1
       await supabase.from('sync_cursors').upsert({

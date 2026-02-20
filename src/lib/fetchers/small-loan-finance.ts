@@ -2,7 +2,7 @@ import { extractEligibility } from '@/lib/extraction'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import {
   createSyncClient, startSyncLog, completeSyncLog, failSyncLog,
-  upsertSupport, parseJsonItems,
+  batchUpsertSupports, parseJsonItems,
 } from './sync-helpers'
 
 // 금융위원회_서민금융상품기본정보
@@ -74,6 +74,7 @@ export async function syncSmallLoanFinance(): Promise<{
 
     console.log(`[SmallLoanFinance] ${allItems.length}건 수집, 처리 시작`)
 
+    const records: Record<string, unknown>[] = []
     for (const item of allItems) {
       if (!item.finPrdNm) { skipped++; continue }
       const productKey = `${item.basYm || ''}_${item.snq || ''}_${item.finPrdNm}`
@@ -89,11 +90,11 @@ export async function syncSmallLoanFinance(): Promise<{
       if (item.irt) amountParts.push(`금리: ${item.irt}`)
       if (item.maxTotLnTrm) amountParts.push(`기간: ${item.maxTotLnTrm}`)
 
-      const record = {
+      records.push({
         title: item.finPrdNm || '서민금융상품',
         organization: item.ofrInstNm || '금융위원회',
         category: '금융',
-        start_date: null as string | null, end_date: null as string | null,
+        start_date: null, end_date: null,
         detail_url: '',
         target_regions: extraction.regions, target_business_types: extraction.businessTypes,
         target_employee_min: extraction.employeeMin, target_employee_max: extraction.employeeMax,
@@ -103,7 +104,7 @@ export async function syncSmallLoanFinance(): Promise<{
         amount: amountParts.length > 0 ? amountParts.join(' / ') : null,
         is_active: true, source: 'small-loan-finance', external_id: externalId,
         raw_eligibility_text: item.trgt || null,
-        raw_exclusion_text: null as string | null, raw_preference_text: item.suprTgtDtlCond || null,
+        raw_exclusion_text: null, raw_preference_text: item.suprTgtDtlCond || null,
         extraction_confidence: extraction.confidence, service_type: 'personal',
         target_age_min: extraction.ageMin, target_age_max: extraction.ageMax,
         target_household_types: extraction.householdTypes.length > 0 ? extraction.householdTypes : null,
@@ -111,12 +112,12 @@ export async function syncSmallLoanFinance(): Promise<{
         target_employment_status: extraction.employmentStatus.length > 0 ? extraction.employmentStatus : null,
         benefit_categories: extraction.benefitCategories.length > 0 ? extraction.benefitCategories : null,
         region_scope: extraction.regionScope,
-      }
-
-      const result = await upsertSupport(supabase, record)
-      if (result === 'upserted') inserted++
-      else skipped++
+      })
     }
+
+    const batchResult = await batchUpsertSupports(supabase, records, 'SmallLoanFinance')
+    inserted = batchResult.inserted
+    skipped += batchResult.skipped
 
     console.log(`[SmallLoanFinance] 완료: ${inserted} 신규, ${updated} 갱신, ${skipped} 건너뜀`)
     await completeSyncLog(supabase, logId, { fetched: allItems.length, inserted, updated, skipped, apiCallsUsed })
